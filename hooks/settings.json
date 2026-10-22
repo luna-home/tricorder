@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(logbuch merk:*)",
+      "Bash(logbuch fertig:*)",
+      "Bash(logbuch wo:*)",
+      "Bash(logbuch zeig:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [{ "type": "command", "command": "logbuch hook session-start", "timeout": 10 }]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [{ "type": "command", "command": "logbuch hook post-compact", "timeout": 10 }]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [{ "type": "command", "command": "logbuch hook session-end" }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "timeout": 30,
+            "prompt": "You decide whether Claude should now write an entry into the user's work log (logbuch). The log exists only so the user can find the thread again after an interruption. Be conservative: most turns need no entry.\n\nHook input: $ARGUMENTS\n\nAnswer {\"ok\": true} if ANY of these holds:\n- stop_hook_active is true.\n- last_assistant_message mentions a logbuch entry (e.g. \"Eingetragen:\" or a `logbuch merk` call).\n- The turn was an explanation, an answer to a question, a small edit, intermediate progress, or Claude asking the user a question before going on.\n\nAnswer {\"ok\": false} ONLY if last_assistant_message clearly shows one of:\n- a meaningful work step was completed (feature, fix, analysis result, deployment, document),\n- a decision was made that shapes the further work,\n- work is paused or blocked with a concrete open item, or waits for someone else,\n- the conversation moves to a different topic and leaves the previous one unfinished.\n\nWhen not ok, set reason to exactly: logbuch: Halte den Stand fest. Fuehre `logbuch merk \"<Thema>\" \"<Stand>\" --weiter \"<naechster Schritt>\" [--offen \"...\"] [--bezug \"...\"] --von claude` aus (bestehenden Themennamen wiederverwenden, Thema abgeschlossen: `logbuch fertig \"<Thema>\" --von claude`). Danach ohne weitere Erklaerung beenden."
+          }
+        ]
+      }
+    ]
+  }
+}

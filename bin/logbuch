@@ -1,0 +1,436 @@
+#!/usr/bin/env python3
+"""logbuch: a work log for picking up the thread after an interruption.
+
+One SQLite file holds entries per topic: where you are, the next step,
+open questions. `logbuch wo` answers "where was I?". The same script also
+serves as the Claude Code hook entry point (`logbuch hook <event>`).
+"""
+
+import argparse
+import json
+import os
+import sqlite3
+import subprocess
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+
+DB_PATH = Path(os.environ.get("LOGBUCH_DB", Path.home() / ".logbuch" / "logbuch.db"))
+LOG_PATH = DB_PATH.parent / "hooks.log"
+MODEL = os.environ.get("LOGBUCH_MODEL", "haiku")
+CHILD_ENV = "LOGBUCH_CHILD"
+# Sessions with a smaller transcript are too short to be worth a summary.
+MIN_TRANSCRIPT_BYTES = 20_000
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS entries (
+    id INTEGER PRIMARY KEY,
+    ts TEXT NOT NULL,
+    project TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'entry',  -- 'entry' or 'done'
+    status TEXT,
+    next_step TEXT,
+    open_questions TEXT,
+    refs TEXT,
+    source TEXT NOT NULL,                -- 'manual', 'claude', 'compact', 'session-end'
+    session_id TEXT,
+    cwd TEXT
+);
+CREATE INDEX IF NOT EXISTS entries_topic ON entries (project, topic COLLATE NOCASE, ts);
+"""
+
+
+# --- storage ---------------------------------------------------------------
+
+def connect():
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(DB_PATH, timeout=10)
+    con.row_factory = sqlite3.Row
+    con.executescript(SCHEMA)
+    return con
+
+
+def now():
+    return datetime.now().astimezone()
+
+
+def add_entry(project, topic, *, kind="entry", status=None, next_step=None,
+              open_questions=None, refs=None, source="manual", session_id=None, cwd=None):
+    topic = topic.strip()
+    with connect() as con:
+        # Keep the spelling of an existing topic, so case variants stay one topic.
+        known = con.execute("SELECT topic FROM entries WHERE project = ? AND topic = ? COLLATE NOCASE"
+                            " LIMIT 1", (project, topic)).fetchone()
+        topic = known["topic"] if known else topic
+        con.execute(
+            "INSERT INTO entries (ts, project, topic, kind, status, next_step, open_questions,"
+            " refs, source, session_id, cwd) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (now().isoformat(timespec="seconds"), project, topic, kind, status,
+             next_step, open_questions, refs, source, session_id, cwd),
+        )
+    return topic
+
+
+def open_topics(project=None, limit=None):
+    """Latest entry per topic whose latest entry is not a 'done' marker, newest first."""
+    sql = """
+        SELECT e.* FROM entries e
+        JOIN (SELECT project, topic COLLATE NOCASE AS t, MAX(id) AS max_id
+              FROM entries GROUP BY project, topic COLLATE NOCASE) last
+          ON e.id = last.max_id
+        WHERE e.kind != 'done' {where}
+        ORDER BY e.id DESC {limit}
+    """.format(
+        where="AND e.project = ?" if project else "",
+        limit=f"LIMIT {int(limit)}" if limit else "",
+    )
+    with connect() as con:
+        return con.execute(sql, (project,) if project else ()).fetchall()
+
+
+def history(project, topic, limit):
+    with connect() as con:
+        rows = con.execute(
+            "SELECT * FROM entries WHERE project = ? AND topic = ? COLLATE NOCASE"
+            " ORDER BY id DESC LIMIT ?",
+            (project, topic, limit),
+        ).fetchall()
+    return list(reversed(rows))
+
+
+def resolve_topic(query, project=None):
+    """Map a user query to (project, topic): exact match first, then a unique substring."""
+    candidates = {(r["project"], r["topic"]) for r in all_topics(project)}
+    q = query.lower()
+    exact = [c for c in candidates if c[1].lower() == q]
+    hits = exact or [c for c in candidates if q in c[1].lower()]
+    if len(hits) == 1:
+        return hits[0]
+    if not hits:
+        sys.exit(f"Kein Thema passt zu „{query}“. `logbuch wo --alle` zeigt alle Themen.")
+    # Several projects share the topic name: prefer the current project.
+    here = [h for h in hits if h[0] == current_project()]
+    if len(here) == 1:
+        return here[0]
+    names = ", ".join(f"{p}/{t}" for p, t in sorted(hits))
+    sys.exit(f"„{query}“ ist mehrdeutig: {names}. Genauer angeben oder --projekt setzen.")
+
+
+def all_topics(project=None):
+    with connect() as con:
+        sql = "SELECT DISTINCT project, topic FROM entries"
+        if project:
+            return con.execute(sql + " WHERE project = ?", (project,)).fetchall()
+        return con.execute(sql).fetchall()
+
+
+# --- formatting --------------------------------------------------------------
+
+def stardate(dt):
+    """Year plus elapsed fraction of the year in thousandths, e.g. 2026.804."""
+    start = dt.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    end = start.replace(year=start.year + 1)
+    frac = (dt - start) / (end - start)
+    return f"{dt.year}.{int(frac * 1000):03d}"
+
+
+def ago(dt):
+    delta = now() - dt
+    if delta < timedelta(minutes=1):
+        return "gerade eben"
+    if delta < timedelta(hours=1):
+        return f"vor {int(delta.total_seconds() // 60)} Min"
+    if delta < timedelta(days=1):
+        return f"vor {int(delta.total_seconds() // 3600)} Std"
+    days = delta.days
+    return "gestern" if days == 1 else f"vor {days} Tagen"
+
+
+WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+
+
+def stamp(row):
+    dt = datetime.fromisoformat(row["ts"])
+    return f"Sternzeit {stardate(dt)} · {WEEKDAYS[dt.weekday()]} {dt:%d.%m. %H:%M} · {ago(dt)}"
+
+
+def format_entry(row, with_topic=True):
+    head = f"■ {row['project']} / {row['topic']}" if with_topic else "■"
+    lines = [f"{head}  ({stamp(row)}, {row['source']})"]
+    if row["kind"] == "done":
+        lines.append("  ✓ abgeschlossen")
+    for label, key in (("Stand", "status"), ("Weiter", "next_step"),
+                       ("Offen", "open_questions"), ("Bezug", "refs")):
+        if row[key]:
+            lines.append(f"  {label}: {row[key]}")
+    return "\n".join(lines)
+
+
+# --- project detection -------------------------------------------------------
+
+def current_project(cwd=None):
+    cwd = Path(cwd or os.getcwd())
+    try:
+        top = subprocess.run(["git", "-C", str(cwd), "rev-parse", "--show-toplevel"],
+                             capture_output=True, text=True, timeout=2).stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        top = ""
+    root = Path(top) if top else cwd
+    return "-" if root == Path.home() else root.name
+
+
+# --- commands ----------------------------------------------------------------
+
+def cmd_merk(args):
+    project = args.projekt or current_project()
+    topic = add_entry(project, args.thema, status=args.stand, next_step=args.weiter,
+                      open_questions=args.offen, refs=args.bezug, source=args.von,
+                      session_id=os.environ.get("LOGBUCH_SESSION"), cwd=os.getcwd())
+    print(f"Eingetragen: {project} / {topic} · Sternzeit {stardate(now())}")
+
+
+def cmd_wo(args):
+    rows = open_topics(args.projekt, None if args.alle else args.n)
+    if not rows:
+        print("Keine offenen Themen im Logbuch.")
+        return
+    print("\n\n".join(format_entry(r) for r in rows))
+
+
+def cmd_zeig(args):
+    project, topic = resolve_topic(args.thema, args.projekt)
+    rows = history(project, topic, args.n)
+    print(f"{project} / {topic}\n\n" + "\n\n".join(format_entry(r, with_topic=False) for r in rows))
+
+
+def cmd_fertig(args):
+    project, topic = resolve_topic(args.thema, args.projekt)
+    add_entry(project, topic, kind="done", status=args.notiz, source=args.von,
+              session_id=os.environ.get("LOGBUCH_SESSION"), cwd=os.getcwd())
+    print(f"Abgeschlossen: {project} / {topic}")
+
+
+# --- hooks -------------------------------------------------------------------
+
+def log(msg):
+    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with LOG_PATH.open("a") as f:
+        f.write(f"{now().isoformat(timespec='seconds')} {msg}\n")
+
+
+def hook_session_start(data):
+    env_file = os.environ.get("CLAUDE_ENV_FILE")
+    if env_file and data.get("session_id"):
+        with open(env_file, "a") as f:
+            f.write(f"export LOGBUCH_SESSION={data['session_id']}\n")
+    if data.get("source") == "compact":
+        return
+    project = current_project(data.get("cwd"))
+    rows = open_topics(project, limit=3)
+    lines = [
+        "logbuch: Arbeitsprotokoll des Users, damit er nach Unterbrechungen den Faden findet.",
+        "Einträge nur schreiben, wenn der Stop-Hook oder der User es verlangt, nicht von dir aus.",
+        "Eintrag schreiben: logbuch merk \"<Thema>\" \"<Stand>\" --weiter \"<nächster Schritt>\""
+        " [--offen \"…\"] [--bezug \"<Ticket/Datei>\"] --von claude. Passt ein bestehendes Thema,"
+        " dessen Namen exakt wiederverwenden. Thema erledigt: logbuch fertig \"<Thema>\" --von claude.",
+    ]
+    if rows:
+        lines.append(f"Offene Themen in {project} (neueste zuerst):")
+        lines += [format_entry(r) for r in rows]
+    print("\n".join(lines))
+
+
+def hook_post_compact(data):
+    summary = data.get("compact_summary")
+    if summary:
+        spawn_summarizer(["--mode", "text"], data, stdin_text=summary)
+
+
+def hook_session_end(data):
+    # On resume the session goes on elsewhere; nothing ends here.
+    if data.get("reason") == "resume":
+        return
+    transcript = data.get("transcript_path")
+    try:
+        if not transcript or Path(transcript).stat().st_size < MIN_TRANSCRIPT_BYTES:
+            return
+    except OSError:
+        return
+    spawn_summarizer(["--mode", "resume"], data)
+
+
+def spawn_summarizer(extra, data, stdin_text=None):
+    """Run `logbuch _summarize` detached, so it outlives the short hook budget."""
+    args = [sys.executable, os.path.abspath(__file__), "_summarize", *extra,
+            "--session", data.get("session_id", ""), "--cwd", data.get("cwd", os.getcwd())]
+    if stdin_text is not None:
+        LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp = LOG_PATH.parent / f"compact-{data.get('session_id', 'x')}.txt"
+        tmp.write_text(stdin_text)
+        args += ["--file", str(tmp)]
+    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with LOG_PATH.open("a") as out:
+        subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=out, stderr=out,
+                         start_new_session=True, cwd=data.get("cwd") or None,
+                         env={**os.environ, CHILD_ENV: "1"})
+
+
+ENTRY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "relevant": {"type": "boolean"},
+        "topic": {"type": "string"},
+        "status": {"type": "string"},
+        "next_step": {"type": "string"},
+        "open_questions": {"type": "string"},
+        "refs": {"type": "string"},
+    },
+    "required": ["relevant"],
+}
+
+SUMMARY_PROMPT = """\
+You write entries for "logbuch", the user's work log. Its only purpose: after an \
+interruption the user reads the latest entry of a topic and finds the thread again \
+within a minute.
+
+{source}
+
+Decide whether a new entry is needed.
+relevant=true if the conversation holds a work state worth resuming: progress on a \
+task, a decision, a next step, an open question or blocker.
+relevant=false if:
+- it was only a quick question, small talk or a trivial one-off edit, or
+- that state is already recorded by a `logbuch merk` call in the conversation.
+
+If relevant=true, fill the fields in German, short and concrete:
+- topic: the work topic. Reuse one of these existing topic names exactly if it fits: {topics}
+- status: where the work stands right now (1-2 sentences)
+- next_step: the concrete next action
+- open_questions: open questions or blockers, empty if none
+- refs: tickets, files, branches, URLs, empty if none
+"""
+
+
+def cmd_summarize(args):
+    project = current_project(args.cwd)
+    topics = ", ".join(f"„{r['topic']}“" for r in open_topics(project)) or "(none)"
+    cmd = ["claude", "-p", "--model", MODEL, "--no-session-persistence", "--tools", "",
+           "--settings", json.dumps({"disableAllHooks": True}),
+           "--output-format", "json", "--json-schema", json.dumps(ENTRY_SCHEMA)]
+    if args.mode == "resume":
+        source = "The conversation above is a Claude Code session that just ended."
+        cmd += ["--resume", args.session, "--fork-session"]
+        stdin_text = None
+    else:
+        source = "Below is the summary of a Claude Code session that was just compacted."
+        stdin_text = Path(args.file).read_text()
+    cmd.append(SUMMARY_PROMPT.format(source=source, topics=topics))
+    try:
+        res = subprocess.run(cmd, input=stdin_text, capture_output=True, text=True,
+                             timeout=300, cwd=args.cwd)
+        entry = parse_claude_output(res.stdout)
+    except (OSError, subprocess.TimeoutExpired, ValueError) as e:
+        log(f"summarize {args.mode} {args.session}: failed: {e}")
+        return
+    finally:
+        if args.file:
+            Path(args.file).unlink(missing_ok=True)
+    if not entry.get("relevant") or not entry.get("topic") or not entry.get("status"):
+        log(f"summarize {args.mode} {args.session}: nothing to record")
+        return
+    add_entry(project, entry["topic"], status=entry["status"],
+              next_step=entry.get("next_step") or None,
+              open_questions=entry.get("open_questions") or None,
+              refs=entry.get("refs") or None,
+              source="compact" if args.mode == "text" else "session-end",
+              session_id=args.session, cwd=args.cwd)
+    log(f"summarize {args.mode} {args.session}: recorded {project}/{entry['topic']}")
+
+
+def parse_claude_output(stdout):
+    """Pull the structured entry out of `claude -p --output-format json`."""
+    try:
+        out = json.loads(stdout)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"no JSON from claude: {stdout[:200]!r}") from e
+    if out.get("is_error"):
+        raise ValueError(f"claude error: {out.get('result')!r}")
+    if isinstance(out.get("structured_output"), dict):
+        return out["structured_output"]
+    try:
+        return json.loads(out.get("result", ""))
+    except json.JSONDecodeError as e:
+        raise ValueError(f"unparsable result: {out.get('result')!r}") from e
+
+
+HOOKS = {
+    "session-start": hook_session_start,
+    "post-compact": hook_post_compact,
+    "session-end": hook_session_end,
+}
+
+
+def cmd_hook(args):
+    # Sessions started by the summarizer must not trigger hooks again.
+    if os.environ.get(CHILD_ENV):
+        return
+    try:
+        data = json.load(sys.stdin)
+        HOOKS[args.event](data)
+    except Exception as e:  # a hook must never break the session
+        log(f"hook {args.event}: {type(e).__name__}: {e}")
+
+
+# --- CLI ---------------------------------------------------------------------
+
+def main(argv=None):
+    p = argparse.ArgumentParser(prog="logbuch", description="Arbeitsprotokoll: wo war ich?")
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    s = sub.add_parser("merk", help="Stand zu einem Thema festhalten")
+    s.add_argument("thema")
+    s.add_argument("stand")
+    s.add_argument("--weiter", help="nächster konkreter Schritt")
+    s.add_argument("--offen", help="offene Fragen, Blocker")
+    s.add_argument("--bezug", help="Ticket, Datei, Branch, URL")
+    s.add_argument("--projekt", help="Projekt (Standard: aktuelles Repo bzw. Verzeichnis)")
+    s.add_argument("--von", default="manual", choices=["manual", "claude"])
+    s.set_defaults(func=cmd_merk)
+
+    s = sub.add_parser("wo", help="letzter Stand je offenem Thema")
+    s.add_argument("-n", type=int, default=10, help="höchstens n Themen (Standard 10)")
+    s.add_argument("--alle", action="store_true", help="alle offenen Themen")
+    s.add_argument("--projekt")
+    s.set_defaults(func=cmd_wo)
+
+    s = sub.add_parser("zeig", help="Verlauf eines Themas")
+    s.add_argument("thema", help="Name oder eindeutiger Teil davon")
+    s.add_argument("-n", type=int, default=10)
+    s.add_argument("--projekt")
+    s.set_defaults(func=cmd_zeig)
+
+    s = sub.add_parser("fertig", help="Thema abschließen")
+    s.add_argument("thema")
+    s.add_argument("--notiz")
+    s.add_argument("--projekt")
+    s.add_argument("--von", default="manual", choices=["manual", "claude"])
+    s.set_defaults(func=cmd_fertig)
+
+    s = sub.add_parser("hook", help="Einstieg für Claude-Code-Hooks")
+    s.add_argument("event", choices=sorted(HOOKS))
+    s.set_defaults(func=cmd_hook)
+
+    s = sub.add_parser("_summarize")  # internal, started by the hooks
+    s.add_argument("--mode", choices=["resume", "text"], required=True)
+    s.add_argument("--session", default="")
+    s.add_argument("--cwd", default=os.getcwd())
+    s.add_argument("--file")
+    s.set_defaults(func=cmd_summarize)
+
+    args = p.parse_args(argv)
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
