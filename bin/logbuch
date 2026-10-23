@@ -100,11 +100,14 @@ def history(project, topic, limit):
 
 
 def resolve_topic(query, project=None):
-    """Map a user query to (project, topic): exact match first, then a unique substring."""
+    """Map a user query to (project, topic): the exact spelling first, then an exact match
+    ignoring case, then a unique substring. SQLite's NOCASE folds only ASCII, so "Übung" and
+    "übung" can be two topics; the exact spelling still picks one of them."""
     candidates = {(r["project"], r["topic"]) for r in all_topics(project)}
     q = query.lower()
+    same = [c for c in candidates if c[1] == query]
     exact = [c for c in candidates if c[1].lower() == q]
-    hits = exact or [c for c in candidates if q in c[1].lower()]
+    hits = same or exact or [c for c in candidates if q in c[1].lower()]
     if len(hits) == 1:
         return hits[0]
     if not hits:
@@ -150,9 +153,13 @@ def ago(dt):
 WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
 
+def clock(dt):
+    return f"{WEEKDAYS[dt.weekday()]} {dt:%d.%m. %H:%M}"
+
+
 def stamp(row):
     dt = datetime.fromisoformat(row["ts"])
-    return f"Sternzeit {stardate(dt)} · {WEEKDAYS[dt.weekday()]} {dt:%d.%m. %H:%M} · {ago(dt)}"
+    return f"{clock(dt)} · {ago(dt)} · Sternzeit {stardate(dt)}"
 
 
 def format_entry(row, with_topic=True):
@@ -187,7 +194,8 @@ def cmd_merk(args):
     topic = add_entry(project, args.thema, status=args.stand, next_step=args.weiter,
                       open_questions=args.offen, refs=args.bezug, source=args.von,
                       session_id=os.environ.get("LOGBUCH_SESSION"), cwd=os.getcwd())
-    print(f"Eingetragen: {project} / {topic} · Sternzeit {stardate(now())}")
+    t = now()
+    print(f"Eingetragen: {project} / {topic} · {clock(t)} (Sternzeit {stardate(t)})")
 
 
 def cmd_wo(args):

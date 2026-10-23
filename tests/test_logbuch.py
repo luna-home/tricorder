@@ -43,6 +43,18 @@ class LogbuchTest(unittest.TestCase):
         self.assertEqual(self.lb.stardate(datetime(2026, 7, 2, 12, tzinfo=timezone.utc)), "2026.500")
         self.assertEqual(self.lb.stardate(datetime(2026, 12, 31, 23, 59, tzinfo=timezone.utc)), "2026.999")
 
+    def test_stamp_puts_real_time_first(self):
+        fixed = datetime(2026, 10, 22, 8, 52).astimezone()
+        row = {"ts": datetime(2026, 10, 21, 22, 52).astimezone().isoformat()}
+        with mock.patch.object(self.lb, "now", return_value=fixed):
+            self.assertEqual(self.lb.stamp(row), "Mi 21.10. 22:52 · vor 10 Std · Sternzeit 2026.805")
+
+    def test_merk_confirmation_shows_real_time_first(self):
+        fixed = datetime(2026, 10, 22, 9, 15).astimezone()
+        with mock.patch.object(self.lb, "now", return_value=fixed):
+            out = self.run_cli("merk", "T", "x", "--projekt", "p")
+        self.assertEqual(out.strip(), "Eingetragen: p / T · Do 22.10. 09:15 (Sternzeit 2026.806)")
+
     def test_case_variants_stay_one_topic(self):
         self.run_cli("merk", "Port-Scanner", "eins", "--projekt", "p")
         out = self.run_cli("merk", "port-scanner", "zwei", "--projekt", "p")
@@ -68,6 +80,18 @@ class LogbuchTest(unittest.TestCase):
         self.run_cli("merk", "Portal", "x", "--projekt", "p")
         with self.assertRaises(SystemExit):
             self.run_cli("zeig", "port", "--projekt", "p")
+
+    def test_umlaut_case_variants_close_by_exact_spelling(self):
+        # NOCASE folds only ASCII: "Übung" and "übung" are two topics.
+        self.run_cli("merk", "Übung", "a", "--projekt", "p")
+        self.run_cli("merk", "übung", "b", "--projekt", "p")
+        self.assertEqual(sorted(r["topic"] for r in self.lb.open_topics("p")), ["Übung", "übung"])
+        self.run_cli("fertig", "Übung", "--projekt", "p")
+        self.assertEqual([r["topic"] for r in self.lb.open_topics("p")], ["übung"])
+        # A query that matches neither spelling exactly stays ambiguous.
+        self.run_cli("merk", "Übung", "c", "--projekt", "p")
+        with self.assertRaises(SystemExit):
+            self.run_cli("fertig", "ÜBUNG", "--projekt", "p")
 
     def test_session_start_injects_topics_and_session_env(self):
         self.run_cli("merk", "A", "Stand A", "--projekt", "proj")
