@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@import '../design/luna-console/theme.css';
+@import '../design/luna-console/components.css';
+@import './type.css';
+
+#app {
+  height: 100dvh;
+}
+
+/* macOS, hiddenInset title bar: the upper frame is the window's drag handle. The traffic lights
+   sit on the upper elbow; header text starts right of the rail, so nothing hides under them. */
+.app-shell[data-platform='darwin'] .lc-panel__upper,
+.app-shell[data-platform='darwin'] .lc-panel__upper-bar,
+.app-shell[data-platform='darwin'] .lc-panel__header,
+.app-shell[data-platform='darwin'] .lc-panel__title,
+.app-shell[data-platform='darwin'] .app-shell__drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+}

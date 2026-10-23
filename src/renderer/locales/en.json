@@ -1,0 +1,90 @@
+{
+  "app": {
+    "title": "Tricorder"
+  },
+  "nav": {
+    "home": "Home"
+  },
+  "home": {
+    "title": "Home",
+    "services": "Services",
+    "status": "Status"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline",
+    "connecting": "Connecting",
+    "alert": "Alert"
+  },
+  "serviceState": {
+    "starting": "Starting",
+    "online": "Online",
+    "offline": "Offline",
+    "unconfigured": "Not configured",
+    "error": "Error",
+    "unknown": "Unknown"
+  },
+  "alert": {
+    "bridge": {
+      "title": "No connection to host",
+      "causes": {
+        "noBridge": "The bridge to the main process is missing (preload not loaded)",
+        "hostUnreachable": "The main process does not respond"
+      },
+      "fix": "Restart the app, check the log in userData/logs"
+    },
+    "offline": {
+      "title": "{service} offline",
+      "fix": "Check the connection, then retry"
+    },
+    "error": {
+      "title": "{service} failed",
+      "fix": "Check the log in userData/logs, restart the app"
+    },
+    "unconfigured": {
+      "title": "{service} not configured",
+      "fix": "Check the service settings"
+    },
+    "actions": {
+      "home": "Home",
+      "retry": "Retry"
+    }
+  },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{n} min ago",
+    "hoursAgo": "{n} h ago",
+    "yesterday": "yesterday",
+    "daysAgo": "{n} days ago",
+    "stardate": "Stardate {value}"
+  },
+  "field": {
+    "required": "Required",
+    "suggestions": "Suggestions"
+  },
+  "query": {
+    "loading": "Loading",
+    "error": "Request failed"
+  },
+  "tray": {
+    "open": "Open",
+    "quit": "Quit",
+    "noServices": "No services"
+  },
+  "startup": {
+    "envInvalid": "Invalid environment variables"
+  },
+  "reasons": {
+    "setupFailed": "The service failed to start",
+    "unknown": "Cause unknown"
+  },
+  "errors": {
+    "unknownService": "Unknown service",
+    "unknownMethod": "Unknown method",
+    "invalidInput": "Invalid input",
+    "invalidOutput": "Invalid answer from the service",
+    "unavailable": "Service not running",
+    "failed": "The service reports an error",
+    "unknown": "Unknown error"
+  }
+}

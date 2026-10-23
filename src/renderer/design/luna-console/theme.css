@@ -1,0 +1,66 @@
+/*
+ * Luna Console for Tailwind CSS v4. Import after tailwindcss:
+ *   @import 'tailwindcss';
+ *   @import './luna-console/theme.css';
+ * Utilities: bg-lcars-orange, text-lcars-lavender, font-lcars, rounded-elbow, rounded-pill ...
+ * Names match luna-monitor's src/assets/main.css.
+ */
+@import './tokens.css';
+
+@theme {
+  --font-lcars: "Antonio", "Arial Narrow", "Roboto Condensed", sans-serif;
+
+  --color-lcars-ground: #000000;
+  --color-lcars-ink: #000000;
+  --color-lcars-orange: #f7a13a;
+  --color-lcars-cream: #f2e0a6;
+  --color-lcars-lavender: #a7a4f2;
+  --color-lcars-mauve: #c79bc9;
+  --color-lcars-peach: #f5b385;
+  --color-lcars-red: #d9675f;
+  --color-lcars-online: #9fd39a;
+  --color-lcars-armed: #ff5a4e;
+  --color-lcars-inactive: #4e4c80;
+  --color-lcars-muted: #5a2e2b;
+  --color-lcars-empty: #262626;
+  --color-lcars-divider: #333333;
+
+  --radius-segment: 2px;
+  --radius-dot: 6px;
+  --radius-elbow-inner: 26px;
+  --radius-option: 29px;
+  --radius-pill: 32px;
+  --radius-tile: 36px;
+  --radius-elbow: 56px;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-lcars-ground);
+}
+
+/* No tap highlight. Controls opt out of text selection in components.css. */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Red alert: frame elements pulse between the two reds. */
+@keyframes red-alert-pulse {
+  from { background-color: var(--color-lcars-red); }
+  to { background-color: var(--color-lcars-armed); }
+}
+.red-alert .alert-pulse { animation: red-alert-pulse 0.5s ease-in-out infinite alternate; }
+
+/* Yellow alert: same pulse between orange and cream. */
+@keyframes yellow-alert-pulse {
+  from { background-color: var(--color-lcars-orange); }
+  to { background-color: var(--color-lcars-cream); }
+}
+.yellow-alert .alert-pulse { animation: yellow-alert-pulse 0.5s ease-in-out infinite alternate; }
+
+@media (prefers-reduced-motion: reduce) {
+  .red-alert .alert-pulse { animation: none; background-color: var(--color-lcars-armed); }
+  .yellow-alert .alert-pulse { animation: none; background-color: var(--color-lcars-orange); }
+}

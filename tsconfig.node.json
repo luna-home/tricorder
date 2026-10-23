@@ -1,0 +1,32 @@
+// Node context: main process, preload, shared code, the main-process half of every service,
+// node-side tests and the tool configs.
+{
+  "extends": "@tsconfig/node24/tsconfig.json",
+  "include": [
+    "*.config.ts",
+    "*.config.mts",
+    "e2e/**/*.ts",
+    "src/main/**/*.ts",
+    "src/preload/**/*.ts",
+    "src/shared/**/*.ts",
+    "src/services/*.ts",
+    "src/services/*/*.ts",
+    "src/services/*/main/**/*.ts",
+    "src/services/*/__tests__/**/*.ts"
+  ],
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": true,
+    "types": ["node"],
+    "noEmit": true,
+    "paths": {
+      "@shared/*": ["./src/shared/*"],
+      "@services/*": ["./src/services/*"],
+      "@renderer/*": ["./src/renderer/*"]
+    },
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
+  }
+}

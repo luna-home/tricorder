@@ -1,0 +1,91 @@
+{
+  "nav": {
+    "new": "Neu"
+  },
+  "fields": {
+    "project": "Projekt",
+    "topic": "Thema",
+    "status": "Stand",
+    "nextStep": "Weiter",
+    "openQuestions": "Offen",
+    "refs": "Bezug",
+    "note": "Notiz",
+    "source": "Quelle"
+  },
+  "sources": {
+    "manual": "Manuell",
+    "claude": "Claude",
+    "compact": "Compact",
+    "sessionEnd": "Sitzungsende"
+  },
+  "actions": {
+    "new": "Neuer Eintrag",
+    "finish": "Abschließen",
+    "back": "Zurück",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
+  },
+  "open": {
+    "kicker": "Logbuch",
+    "title": "Wo war ich",
+    "filter": "Projektfilter",
+    "all": "Alle",
+    "empty": "Keine offenen Themen",
+    "emptyHint": "Neuer Eintrag legt ein Thema an",
+    "list": "Offene Themen"
+  },
+  "history": {
+    "title": "Verlauf",
+    "list": "Einträge",
+    "done": "Abgeschlossen",
+    "closed": "Thema abgeschlossen",
+    "notFound": "Thema nicht gefunden",
+    "notFoundHint": "Es gibt in diesem Projekt keine Einträge zu diesem Thema"
+  },
+  "form": {
+    "kicker": "Logbuch",
+    "title": "Neuer Eintrag",
+    "saving": "Speichert",
+    "failed": "Speichern fehlgeschlagen",
+    "shortcut": "Cmd/Strg + Enter speichert",
+    "placeholders": {
+      "project": "Projektname",
+      "topic": "Woran du arbeitest",
+      "status": "Wo es steht",
+      "nextStep": "Der nächste konkrete Schritt",
+      "openQuestions": "Fragen, Blocker",
+      "refs": "Tickets, Dateien, Branches, URLs"
+    },
+    "errors": {
+      "required": "Pflichtfeld",
+      "invalid": "Ungültige Eingabe"
+    }
+  },
+  "done": {
+    "title": "Abschließen",
+    "hint": "Erster Tap schaltet scharf, zweiter Tap schließt ab",
+    "confirm": "Bestätigen?",
+    "failed": "Abschließen fehlgeschlagen",
+    "last": "Letzter Stand"
+  },
+  "setup": {
+    "title": "Logbuch nicht gefunden",
+    "fix": "Pfad in Einstellungen setzen",
+    "fixEnv": "LOGBUCH_DB zeigt auf eine fehlende Datei: Variable ändern oder entfernen",
+    "path": "Gesuchter Pfad",
+    "source": {
+      "env": "Aus LOGBUCH_DB",
+      "settings": "Aus den Einstellungen",
+      "default": "Standardpfad"
+    },
+    "field": "Pfad zur logbuch.db",
+    "save": "Pfad speichern",
+    "reset": "Standardpfad",
+    "failed": "Pfad nicht gespeichert",
+    "invalidPath": "Absoluten Pfad oder ~/… angeben"
+  },
+  "reasons": {
+    "dbMissing": "Logbuch-Datenbank nicht gefunden",
+    "dbOpenFailed": "Logbuch-Datenbank lässt sich nicht öffnen"
+  }
+}

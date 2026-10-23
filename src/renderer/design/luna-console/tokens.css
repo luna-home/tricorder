@@ -1,0 +1,44 @@
+/* Luna Console tokens as plain CSS custom properties. Generated from tokens.json. */
+:root {
+  --color-lcars-ground: #000000;
+  --color-lcars-ink: #000000;
+  --color-lcars-orange: #f7a13a;
+  --color-lcars-cream: #f2e0a6;
+  --color-lcars-lavender: #a7a4f2;
+  --color-lcars-mauve: #c79bc9;
+  --color-lcars-peach: #f5b385;
+  --color-lcars-red: #d9675f;
+  --color-lcars-online: #9fd39a;
+  --color-lcars-armed: #ff5a4e;
+  --color-lcars-inactive: #4e4c80;
+  --color-lcars-muted: #5a2e2b;
+  --color-lcars-empty: #262626;
+  --color-lcars-divider: #333333;
+  --font-lcars: "Antonio", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4-5: 18px;
+  --space-5: 20px;
+  --space-8: 32px;
+  --radius-segment: 2px;
+  --radius-dot: 6px;
+  --radius-elbow-inner: 26px;
+  --radius-option: 29px;
+  --radius-pill: 32px;
+  --radius-tile: 36px;
+  --radius-elbow: 56px;
+  --breakpoint-compact: 640px;
+  --rail-width: 150px;
+  --elbow-width: 210px;
+  --rail-width-compact: 100px;
+  --elbow-width-compact: 140px;
+  --bar-height: 14px;
+  --nav-height: 50px;
+  --option-height: 58px;
+  --control-height: 64px;
+  --segmentbar-height: 90px;
+  --tile-height: 103px;
+}

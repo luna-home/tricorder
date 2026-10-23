@@ -1,0 +1,229 @@
+
+/* Luna Console: component classes. Every value comes from tokens.css. */
+
+.lc-surface {
+  background: var(--color-lcars-ground);
+  color: var(--color-lcars-orange);
+  font-family: var(--font-lcars);
+  text-transform: uppercase;
+  line-height: normal;
+  -webkit-tap-highlight-color: transparent;
+}
+.lc-surface *, .lc-surface *::before, .lc-surface *::after { box-sizing: border-box; }
+
+/* Shared: labels sit bottom-right inside a coloured shape, ink on colour. */
+.lc-btn, .lc-nav, .lc-option, .lc-tile {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  border: 0;
+  margin: 0;
+  color: var(--color-lcars-ink);
+  font-family: var(--font-lcars);
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  white-space: nowrap;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.lc-btn:active, .lc-nav:active, .lc-option:active, .lc-tile:active { filter: brightness(1.3); }
+.lc-btn:focus-visible, .lc-nav:focus-visible, .lc-option:focus-visible, .lc-tile:focus-visible {
+  outline: 3px solid var(--color-lcars-cream);
+  outline-offset: 2px;
+}
+.lc-btn:disabled, .lc-nav:disabled, .lc-option:disabled, .lc-tile:disabled { cursor: default; filter: none; }
+
+/* Colour modifiers: one per identity colour. */
+.lc-bg-orange { background: var(--color-lcars-orange); }
+.lc-bg-cream { background: var(--color-lcars-cream); }
+.lc-bg-lavender { background: var(--color-lcars-lavender); }
+.lc-bg-mauve { background: var(--color-lcars-mauve); }
+.lc-bg-peach { background: var(--color-lcars-peach); }
+.lc-bg-red { background: var(--color-lcars-red); }
+.lc-bg-armed { background: var(--color-lcars-armed); }
+.lc-bg-inactive { background: var(--color-lcars-inactive); }
+
+/* Elbow: coloured block, outer curve, black cut-out with the inner curve. */
+.lc-elbow {
+  position: relative;
+  width: var(--elbow-width);
+  height: 104px;
+  background: var(--color-lcars-lavender);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.lc-elbow--down { border-bottom-left-radius: var(--radius-elbow); }
+.lc-elbow--up { border-top-left-radius: var(--radius-elbow); }
+.lc-elbow::after {
+  content: "";
+  position: absolute;
+  left: var(--rail-width);
+  right: 0;
+  background: var(--color-lcars-ground);
+}
+.lc-elbow--down::after { top: 0; bottom: var(--bar-height); border-bottom-left-radius: var(--radius-elbow-inner); }
+.lc-elbow--up::after { bottom: 0; top: var(--bar-height); border-top-left-radius: var(--radius-elbow-inner); }
+.lc-elbow__label {
+  position: absolute;
+  left: 10px;
+  width: calc(var(--rail-width) - 22px);
+  color: var(--color-lcars-ink);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: right;
+}
+.lc-elbow--down .lc-elbow__label { bottom: 28px; }
+.lc-elbow--up .lc-elbow__label { bottom: 8px; }
+
+/* Bar: a strip of segments of unequal width, 4px apart. */
+.lc-bar { display: flex; gap: var(--space-1); height: var(--bar-height); overflow: hidden; }
+.lc-bar > * { flex: 0 1 auto; min-width: 0; }
+.lc-bar > .lc-bar__fill { flex: 1 1 0; }
+
+/* Nav rail button: square, label bottom-right; the current page turns cream. */
+.lc-nav {
+  width: var(--rail-width);
+  height: var(--nav-height);
+  padding: 0 var(--space-3) 5px;
+  font-size: 22px;
+}
+.lc-nav[aria-current="page"] { background: var(--color-lcars-cream); }
+.lc-rail { display: flex; flex-direction: column; gap: var(--space-1); width: var(--rail-width); }
+
+/* Control row: pills that share a height; only the outer ends are rounded. */
+.lc-row { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--space-2); height: var(--control-height); }
+.lc-btn {
+  height: 100%;
+  padding: 0 var(--space-4-5) 8px;
+  font-size: 24px;
+}
+.lc-btn--cap-left { border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
+.lc-btn--cap-right { border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
+.lc-btn--pill { border-radius: var(--radius-pill); }
+
+/* Option pill: one of a set; selected = orange, others = inactive. */
+.lc-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(max(min(100%, 160px), calc((100% - var(--space-2)) / 2)), 1fr)); grid-auto-rows: var(--option-height); gap: var(--space-2); }
+.lc-option {
+  border-radius: var(--radius-option);
+  padding: 0 22px 6px;
+  font-size: 22px;
+  background: var(--color-lcars-inactive);
+  color: var(--color-lcars-cream);
+}
+.lc-option[aria-pressed="true"] { background: var(--color-lcars-orange); color: var(--color-lcars-ink); }
+
+/* Command tile: code top-left, label bottom-right; armed asks for a second tap. */
+.lc-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(max(min(100%, 150px), calc((100% - 2 * var(--space-2)) / 3)), 1fr)); grid-auto-rows: var(--tile-height); gap: var(--space-2); }
+.lc-tile {
+  position: relative;
+  padding: 0 var(--space-5) 8px;
+  font-size: 30px;
+  line-height: 1;
+}
+.lc-tile__code { position: absolute; top: 10px; left: var(--space-5); font-size: 16px; }
+.lc-tile[data-armed="true"] { background: var(--color-lcars-armed); }
+.lc-tile--tl { border-top-left-radius: var(--radius-tile); }
+.lc-tile--tr { border-top-right-radius: var(--radius-tile); }
+.lc-tile--bl { border-bottom-left-radius: var(--radius-tile); }
+.lc-tile--br { border-bottom-right-radius: var(--radius-tile); }
+
+/* Segment bar: 25 segments, lit from the left; drag to set. */
+.lc-segments { display: flex; gap: var(--space-1); height: var(--segmentbar-height); touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.lc-segments > i { flex: 1 1 0; border-radius: var(--radius-segment); background: var(--color-lcars-empty); }
+.lc-segments > i.is-lit { background: var(--color-lcars-orange); }
+.lc-segments > i.is-danger { background: var(--color-lcars-red); }
+.lc-segments[data-muted="true"] > i.is-lit,
+.lc-segments[data-muted="true"] > i.is-danger { background: var(--color-lcars-muted); }
+
+/* Readout: lavender label left, orange value right, on one baseline row. */
+.lc-readout { display: flex; align-items: flex-end; justify-content: space-between; height: 44px; }
+.lc-readout__label { font-size: 22px; color: var(--color-lcars-lavender); }
+.lc-readout__value { font-size: 46px; font-weight: 600; line-height: 1; color: var(--color-lcars-orange); font-variant-numeric: tabular-nums; }
+.lc-readout__value--text { font-size: 22px; font-weight: 400; color: var(--color-lcars-cream); }
+.lc-readout__value[data-state="alert"] { color: var(--color-lcars-red); }
+
+/* Status: dot plus word; online green, offline red. */
+.lc-status { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 20px; color: var(--color-lcars-online); }
+.lc-status::before { content: ""; width: 12px; height: 12px; border-radius: var(--radius-dot); background: currentColor; }
+.lc-status[data-state="offline"] { color: var(--color-lcars-red); }
+
+/* Status line: the one hairline in the system. */
+.lc-statusline { display: flex; align-items: center; justify-content: space-between; border-top: 2px solid var(--color-lcars-divider); padding-top: var(--space-2-5); font-size: 20px; }
+.lc-statusline > :first-child { color: var(--color-lcars-lavender); }
+
+/* Notice: replaces page content in an alert or offline state. */
+.lc-notice { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2-5); height: 100%; text-align: center; }
+.lc-notice__title { font-size: 46px; font-weight: 600; line-height: 1; }
+.lc-notice__detail { font-size: 22px; }
+.lc-notice--red .lc-notice__title { color: var(--color-lcars-armed); }
+.lc-notice--red .lc-notice__detail { color: var(--color-lcars-red); }
+.lc-notice--yellow .lc-notice__title { color: var(--color-lcars-orange); }
+.lc-notice--yellow .lc-notice__detail { color: var(--color-lcars-cream); }
+.lc-notice--offline .lc-notice__title { color: var(--color-lcars-red); }
+.lc-notice--offline .lc-notice__detail { color: var(--color-lcars-lavender); }
+
+/* Alert states: every frame shape marked .lc-pulse throbs between two colours. */
+@keyframes lc-red-alert { from { background-color: var(--color-lcars-red); } to { background-color: var(--color-lcars-armed); } }
+@keyframes lc-yellow-alert { from { background-color: var(--color-lcars-orange); } to { background-color: var(--color-lcars-cream); } }
+.lc-red-alert .lc-pulse { animation: lc-red-alert 0.5s ease-in-out infinite alternate; }
+.lc-yellow-alert .lc-pulse { animation: lc-yellow-alert 0.5s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  .lc-red-alert .lc-pulse { animation: none; background-color: var(--color-lcars-armed); }
+  .lc-yellow-alert .lc-pulse { animation: none; background-color: var(--color-lcars-orange); }
+}
+
+/* Panel: the app frame. Fills its container (give the container a height, e.g. 100dvh,
+   or let the frame grow with its content). Rows: header, title (compact only), 6px gap,
+   lower elbow, 4px gap, body. Columns: rail, rest of the elbow, everything else. */
+.lc-panel {
+  display: grid;
+  grid-template-columns: var(--rail-width) calc(var(--elbow-width) - var(--rail-width)) minmax(0, 1fr);
+  grid-template-rows: auto auto 6px 70px var(--space-1) minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.lc-panel__upper { grid-row: 1 / 3; grid-column: 1 / 3; height: auto; min-height: 104px; }
+.lc-panel__upper-bar { grid-row: 1 / 3; grid-column: 3; align-self: end; margin-left: var(--space-1); }
+.lc-panel__lower { grid-row: 4; grid-column: 1 / 3; }
+.lc-panel__lower-bar { grid-row: 4; grid-column: 3; align-self: start; margin-left: var(--space-1); }
+.lc-panel__header { grid-row: 1; grid-column: 2 / -1; justify-self: start; display: flex; align-items: center; gap: 22px; min-height: 78px; padding: 6px 0 20px 26px; }
+.lc-panel__clock { font-size: 68px; font-weight: 600; line-height: 1; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+.lc-panel__meta { display: flex; flex-direction: column; gap: var(--space-1-5); font-size: 20px; }
+.lc-panel__date { color: var(--color-lcars-lavender); }
+.lc-panel__title { grid-row: 1; grid-column: 3; justify-self: end; align-self: start; padding: 4px 12px 0 0; font-size: 58px; font-weight: 600; line-height: 1.1; }
+.lc-panel__rail { grid-row: 6; grid-column: 1; }
+/* Elbows are positioned (for their cut-out); text and content must paint above them. */
+.lc-panel__header, .lc-panel__title, .lc-panel__content { position: relative; z-index: 1; }
+.lc-panel__content { grid-row: 4 / -1; grid-column: 2 / -1; min-height: 0; overflow: auto; padding: 26px 16px 10px 30px; }
+
+/* Compact frame (below breakpoint-compact): narrower rail, title on its own row.
+   Reacts to the nearest size container, or to the viewport when there is none. */
+@container (max-width: 639px) {
+  .lc-panel { --rail-width: var(--rail-width-compact); --elbow-width: var(--elbow-width-compact); }
+  .lc-panel__header { gap: var(--space-3); min-height: 0; padding: 6px 0 4px 20px; }
+  .lc-panel__clock { font-size: 46px; }
+  .lc-panel__meta { font-size: 18px; }
+  .lc-panel__title { grid-row: 2; padding: 0 12px 20px 0; font-size: 46px; }
+  .lc-panel__content { padding: 26px 12px 10px 16px; }
+  .lc-panel .lc-nav { font-size: 20px; }
+  .lc-panel .lc-btn { padding: 0 var(--space-3) 8px; font-size: 22px; }
+}
+@media (max-width: 639px) {
+  .lc-panel { --rail-width: var(--rail-width-compact); --elbow-width: var(--elbow-width-compact); }
+  .lc-panel__header { gap: var(--space-3); min-height: 0; padding: 6px 0 4px 20px; }
+  .lc-panel__clock { font-size: 46px; }
+  .lc-panel__meta { font-size: 18px; }
+  .lc-panel__title { grid-row: 2; padding: 0 12px 20px 0; font-size: 46px; }
+  .lc-panel__content { padding: 26px 12px 10px 16px; }
+  .lc-panel .lc-nav { font-size: 20px; }
+  .lc-panel .lc-btn { padding: 0 var(--space-3) 8px; font-size: 22px; }
+}
+
+/* Content grids reflow on their own: never more columns than the design, never overflow. */
+.lc-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(max(min(100%, 280px), calc((100% - var(--space-8)) / 2)), 1fr)); gap: var(--space-8); height: 100%; }
+.lc-col { display: flex; flex-direction: column; gap: var(--space-2-5); min-width: 0; }
+.lc-col > .lc-row, .lc-col > .lc-options { margin-top: auto; }

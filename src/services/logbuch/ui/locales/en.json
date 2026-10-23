@@ -1,0 +1,91 @@
+{
+  "nav": {
+    "new": "New"
+  },
+  "fields": {
+    "project": "Project",
+    "topic": "Topic",
+    "status": "Status",
+    "nextStep": "Next",
+    "openQuestions": "Open",
+    "refs": "Refs",
+    "note": "Note",
+    "source": "Source"
+  },
+  "sources": {
+    "manual": "Manual",
+    "claude": "Claude",
+    "compact": "Compact",
+    "sessionEnd": "Session end"
+  },
+  "actions": {
+    "new": "New entry",
+    "finish": "Finish",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "open": {
+    "kicker": "Logbook",
+    "title": "Where was I",
+    "filter": "Project filter",
+    "all": "All",
+    "empty": "No open topics",
+    "emptyHint": "A new entry starts a topic",
+    "list": "Open topics"
+  },
+  "history": {
+    "title": "History",
+    "list": "Entries",
+    "done": "Finished",
+    "closed": "Topic finished",
+    "notFound": "Topic not found",
+    "notFoundHint": "This project has no entries for this topic"
+  },
+  "form": {
+    "kicker": "Logbook",
+    "title": "New entry",
+    "saving": "Saving",
+    "failed": "Save failed",
+    "shortcut": "Cmd/Ctrl + Enter saves",
+    "placeholders": {
+      "project": "Project name",
+      "topic": "What you are working on",
+      "status": "Where it stands",
+      "nextStep": "The next concrete step",
+      "openQuestions": "Questions, blockers",
+      "refs": "Tickets, files, branches, URLs"
+    },
+    "errors": {
+      "required": "Required",
+      "invalid": "Invalid input"
+    }
+  },
+  "done": {
+    "title": "Finish",
+    "hint": "First tap arms, second tap finishes",
+    "confirm": "Confirm?",
+    "failed": "Finishing failed",
+    "last": "Last status"
+  },
+  "setup": {
+    "title": "Logbook not found",
+    "fix": "Set the path in the settings",
+    "fixEnv": "LOGBUCH_DB points to a missing file: change or remove the variable",
+    "path": "Path looked up",
+    "source": {
+      "env": "From LOGBUCH_DB",
+      "settings": "From the settings",
+      "default": "Default path"
+    },
+    "field": "Path to logbuch.db",
+    "save": "Save path",
+    "reset": "Default path",
+    "failed": "Path not saved",
+    "invalidPath": "Enter an absolute path or ~/…"
+  },
+  "reasons": {
+    "dbMissing": "Logbook database not found",
+    "dbOpenFailed": "Cannot open the logbook database"
+  }
+}

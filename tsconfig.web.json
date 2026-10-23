@@ -1,0 +1,32 @@
+// Web context: the renderer and the UI half of every service (ui/**, manifest.ts,
+// contract.ts, registry.ts). Tests are checked by tsconfig.web.test.json.
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": [
+    "src/renderer/env.d.ts",
+    "src/renderer/**/*.ts",
+    "src/renderer/**/*.vue",
+    "src/shared/**/*.ts",
+    "src/services/registry.ts",
+    "src/services/*/manifest.ts",
+    "src/services/*/contract.ts",
+    "src/services/*/ui/**/*.ts",
+    "src/services/*/ui/**/*.vue"
+  ],
+  "exclude": [
+    "src/**/__tests__/*",
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/shared/**/*.spec.ts"
+  ],
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@renderer/*": ["./src/renderer/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@services/*": ["./src/services/*"]
+    },
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.web.tsbuildinfo"
+  }
+}

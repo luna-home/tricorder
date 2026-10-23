@@ -1,0 +1,10 @@
+out/
+release/
+coverage/
+test-results/
+playwright-report/
+pnpm-lock.yaml
+src/renderer/design/luna-console/
+bin/
+hooks/
+tests/

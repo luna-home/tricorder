@@ -1,2 +1,23 @@
 __pycache__/
 *.pyc
+
+# Environment: only the *.example templates are committed
+.env
+.env.*
+!.env.*.example
+
+# Dependencies, build output, test artefacts
+node_modules/
+out/
+dist/
+release/
+test-results/
+playwright-report/
+coverage/
+*.tsbuildinfo
+.eslintcache
+
+# Editor and OS files
+.DS_Store
+.idea/
+*.log

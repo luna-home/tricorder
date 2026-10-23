@@ -1,0 +1,90 @@
+{
+  "app": {
+    "title": "Tricorder"
+  },
+  "nav": {
+    "home": "Start"
+  },
+  "home": {
+    "title": "Start",
+    "services": "Dienste",
+    "status": "Status"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline",
+    "connecting": "Verbinde",
+    "alert": "Alarm"
+  },
+  "serviceState": {
+    "starting": "Startet",
+    "online": "Online",
+    "offline": "Offline",
+    "unconfigured": "Nicht eingerichtet",
+    "error": "Fehler",
+    "unknown": "Unbekannt"
+  },
+  "alert": {
+    "bridge": {
+      "title": "Keine Verbindung zum Host",
+      "causes": {
+        "noBridge": "Die Brücke zum Main-Prozess fehlt (Preload nicht geladen)",
+        "hostUnreachable": "Der Main-Prozess antwortet nicht"
+      },
+      "fix": "App neu starten, Log unter userData/logs prüfen"
+    },
+    "offline": {
+      "title": "{service} offline",
+      "fix": "Verbindung prüfen, dann erneut prüfen"
+    },
+    "error": {
+      "title": "{service} gestört",
+      "fix": "Log unter userData/logs prüfen, App neu starten"
+    },
+    "unconfigured": {
+      "title": "{service} nicht eingerichtet",
+      "fix": "Einstellungen des Dienstes prüfen"
+    },
+    "actions": {
+      "home": "Start",
+      "retry": "Erneut prüfen"
+    }
+  },
+  "time": {
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {n} Min",
+    "hoursAgo": "vor {n} Std",
+    "yesterday": "gestern",
+    "daysAgo": "vor {n} Tagen",
+    "stardate": "Sternzeit {value}"
+  },
+  "field": {
+    "required": "Pflicht",
+    "suggestions": "Vorschläge"
+  },
+  "query": {
+    "loading": "Lade",
+    "error": "Abfrage fehlgeschlagen"
+  },
+  "tray": {
+    "open": "Öffnen",
+    "quit": "Beenden",
+    "noServices": "Keine Dienste"
+  },
+  "startup": {
+    "envInvalid": "Ungültige Umgebungsvariablen"
+  },
+  "reasons": {
+    "setupFailed": "Der Dienst ließ sich nicht starten",
+    "unknown": "Ursache unbekannt"
+  },
+  "errors": {
+    "unknownService": "Unbekannter Dienst",
+    "unknownMethod": "Unbekannte Methode",
+    "invalidInput": "Ungültige Eingabe",
+    "invalidOutput": "Ungültige Antwort des Dienstes",
+    "unavailable": "Dienst läuft nicht",
+    "failed": "Dienst meldet einen Fehler",
+    "unknown": "Unbekannter Fehler"
+  }
+}
