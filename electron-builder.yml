@@ -14,7 +14,10 @@ mac:
   target:
     - target: dmg
       arch: [arm64]
-  identity: null
+  # Ad-hoc signature: no Apple certificate, but a valid signature, so a downloaded app asks
+  # "Open anyway" instead of claiming to be damaged. The hardened runtime needs a real identity.
+  identity: '-'
+  hardenedRuntime: false
   category: public.app-category.developer-tools
 dmg:
   artifactName: ${productName}-${version}-${arch}.${ext}

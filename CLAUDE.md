@@ -42,8 +42,8 @@ pnpm lint             # oxlint, dann eslint (beide mit --fix)
 pnpm format           # prettier
 pnpm test             # vitest run (Projekte "node" und "web")
 pnpm test:e2e         # baut, dann Playwright gegen die gebaute App (Temp-DB, Temp-userData)
-pnpm build:mac        # .dmg arm64 nach release/<version>/ (unsigniert)
-pnpm build:win        # NSIS-Installer x64 (auf Windows bauen und testen)
+pnpm build:mac        # .dmg arm64 nach release/<version>/ (ad-hoc signiert, nicht notarisiert)
+pnpm build:win        # NSIS-Installer x64, unsigniert; baut auch auf macOS ohne Wine (auf Windows testen)
 python3 -m unittest discover -s tests   # Tests des Python-CLI
 ```
 

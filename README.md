@@ -75,7 +75,7 @@ Was `pnpm dev` tut:
 | `pnpm test` | Vitest einmal (Projekte `node` und `web`) |
 | `pnpm test:watch` | Vitest im Watch-Modus |
 | `pnpm test:e2e` | bauen, dann Playwright gegen die gebaute Electron-App: Hauptablauf des Logbuchs und Yellow Alert bei fehlender DB (Temp-DB, Temp-userData) |
-| `pnpm build:mac` | `.dmg` für Apple Silicon (arm64, unsigniert) nach `release/<version>/` |
+| `pnpm build:mac` | `.dmg` für Apple Silicon (arm64, ad-hoc signiert) nach `release/<version>/` |
 | `pnpm build:win` | NSIS-Installer für Windows x64 nach `release/<version>/` |
 
 Python-CLI: `python3 -m unittest discover -s tests`.
