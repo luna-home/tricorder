@@ -4,6 +4,7 @@ import { app, BrowserWindow, dialog, ipcMain, Notification, safeStorage } from '
 
 import { DEFAULT_LOCALE, type Locale, pickLocale } from '@shared/locale'
 
+import appIcon from '../../assets/logo/tricorder-icon-1024.png?asset'
 import trayIcon from './assets/tray.png?asset'
 import trayIcon2x from './assets/tray@2x.png?asset'
 import trayTemplate from './assets/trayTemplate.png?asset'
@@ -95,6 +96,8 @@ function run(): void {
       log.info(
         `main started (electron ${process.versions.electron}, userData ${app.getPath('userData')}, locale ${app.getLocale()})`,
       )
+      // The packaged app takes its icon from the bundle; in dev the dock would show Electron's.
+      if (mac && !app.isPackaged) app.dock?.setIcon(appIcon)
       locale = pickLocale(app.getLocale())
       appUrl = rendererUrl()
       hardenSessions(appUrl)

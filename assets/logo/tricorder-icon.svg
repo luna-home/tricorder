@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Tricorder</title>
+  <rect width="1024" height="1024" fill="#000000"/>
+  <!-- Upper elbow (lavender) -->
+  <path d="M112 112 H312 V300 A52 52 0 0 0 364 352 H412 V400 H222 A110 110 0 0 1 112 290 Z" fill="#a7a4f2"/>
+  <!-- Upper bar -->
+  <rect x="424" y="352" width="96" height="48" fill="#f7a13a"/>
+  <rect x="532" y="352" width="268" height="48" fill="#c79bc9"/>
+  <path d="M812 352 H888 A24 24 0 0 1 888 400 H812 Z" fill="#a7a4f2"/>
+  <!-- Lower elbow (red) -->
+  <path d="M112 600 V526 A110 110 0 0 1 222 416 H412 V464 H364 A52 52 0 0 0 312 516 V600 Z" fill="#d9675f"/>
+  <!-- Lower bar -->
+  <rect x="424" y="416" width="56" height="48" fill="#f5b385"/>
+  <rect x="492" y="416" width="308" height="48" fill="#c79bc9"/>
+  <path d="M812 416 H888 A24 24 0 0 1 888 464 H812 Z" fill="#d9675f"/>
+  <!-- Rail: nav blocks, current one cream -->
+  <rect x="112" y="612" width="200" height="136" fill="#f5b385"/>
+  <path d="M112 760 H312 V912 H112 Z" fill="#f2e0a6"/>
+  <!-- Header: online dot + scan trace -->
+  <circle cx="408" cy="226" r="30" fill="#9fd39a"/>
+  <polyline points="470.0,226.0 474.3,225.9 478.6,225.6 482.9,224.9 487.2,223.8 491.5,222.3 495.8,220.7 500.1,219.0 504.4,217.3 508.7,216.0 513.0,215.1 517.3,214.9 521.6,215.6 525.9,217.2 530.2,219.8 534.5,223.3 538.8,227.8 543.1,232.9 547.4,238.6 551.7,244.5 556.0,250.3 560.3,255.6 564.6,260.1 568.9,263.5 573.2,265.4 577.5,265.6 581.8,263.9 586.1,260.3 590.4,254.8 594.7,247.5 599.0,238.7 603.3,228.6 607.6,217.8 611.9,206.7 616.2,195.8 620.5,185.7 624.8,176.8 629.1,169.7 633.4,164.7 637.7,162.1 642.0,162.2 646.3,165.1 650.6,170.6 654.9,178.6 659.2,188.8 663.5,200.7 667.8,213.9 672.1,227.7 676.4,241.7 680.7,255.0 685.0,267.1 689.3,277.6 693.6,285.8 697.9,291.6 702.2,294.5 706.5,294.6 710.8,291.8 715.1,286.3 719.4,278.5 723.7,268.6 728.0,257.3 732.3,245.0 736.6,232.3 740.9,219.8 745.2,208.1 749.5,197.6 753.8,188.8 758.1,182.0 762.4,177.5 766.7,175.2 771.0,175.2 775.3,177.3 779.6,181.4 783.9,187.0 788.2,193.9 792.5,201.5 796.8,209.6 801.1,217.6 805.4,225.1 809.7,231.9 814.0,237.6 818.3,242.1 822.6,245.3 826.9,247.1 831.2,247.7 835.5,247.0 839.8,245.4 844.1,243.1 848.4,240.3 852.7,237.3 857.0,234.2 861.3,231.4 865.6,229.0 869.9,227.1 874.2,225.7 878.5,224.9 882.8,224.6 887.1,224.8 891.4,225.2 895.7,225.7 900.0,226.0" fill="none" stroke="#f7a13a" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Content: status segment readouts -->
+  <rect x="372" y="556" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="441" y="556" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="510" y="556" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="579" y="556" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="648" y="556" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="717" y="556" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="786" y="556" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="855" y="556" width="57" height="84" rx="4" fill="#262626"/><rect x="372" y="672" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="441" y="672" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="510" y="672" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="579" y="672" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="648" y="672" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="717" y="672" width="57" height="84" rx="4" fill="#262626"/><rect x="786" y="672" width="57" height="84" rx="4" fill="#262626"/><rect x="855" y="672" width="57" height="84" rx="4" fill="#262626"/><rect x="372" y="788" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="441" y="788" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="510" y="788" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="579" y="788" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="648" y="788" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="717" y="788" width="57" height="84" rx="4" fill="#f7a13a"/><rect x="786" y="788" width="57" height="84" rx="4" fill="#d9675f"/><rect x="855" y="788" width="57" height="84" rx="4" fill="#d9675f"/>
+</svg>

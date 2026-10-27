@@ -7,6 +7,8 @@ files:
   - out/**
   - package.json
 asar: true
+# 1024 px PNG; electron-builder derives .icns and .ico from it. Source: assets/logo/.
+icon: assets/logo/tricorder-icon-1024.png
 npmRebuild: false
 mac:
   target:

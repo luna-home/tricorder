@@ -50,6 +50,9 @@ python3 -m unittest discover -s tests   # Tests des Python-CLI
 Ohne direnv vor jedem Node-Befehl: `source ~/.nvm/nvm.sh && nvm use` (die Standard-Node ist v20).
 Liegt `pnpm` danach nicht im PATH, `corepack pnpm …` aufrufen (nimmt die Version aus
 `packageManager`).
+`pnpm build:mac` ruft intern selbst `pnpm` auf; ohne `pnpm` im PATH vorher
+`corepack enable --install-directory <dir> pnpm` und `<dir>` vorn in den PATH. Der
+Sternzeit-Vertragstest braucht Python ≥ 3.11 (`/usr/bin/python3` ist 3.9: Homebrew vorn im PATH).
 
 **`ELECTRON_RUN_AS_NODE`:** Terminals in VS Code und Claude Code exportieren
 `ELECTRON_RUN_AS_NODE=1`; Electron startet dann als nacktes Node. `electron.vite.config.mts`
@@ -128,6 +131,9 @@ und `contract.ts`.
 - **Fenster schließen** versteckt es nur, die App lebt im Tray weiter. Beenden über das
   Tray-Menü oder Cmd+Q. Tray-Icons liegen in `src/main/assets/` (als `?asset` importiert, damit
   sie in `out/` landen und ohne Builder-Änderung verpackt werden).
+- **App-Icon:** Quelle in `assets/logo/` (`tricorder-icon.svg`, `tricorder-icon-1024.png`).
+  `electron-builder.yml` (`icon:`) erzeugt daraus `.icns` und `.ico`; im Dev-Lauf setzt Main es
+  per `app.dock.setIcon`, sonst zeigt das Dock das Electron-Logo.
 - **Autostart** (`settings.app.autostart`, Standard aus) wird nur in der gepackten App
   angewendet; im Dev-Lauf wird er nur geloggt. Gesetzt wird er nur, wenn er vom OS-Zustand
   abweicht (macOS loggt sonst bei jedem Start einen nativen Fehler), und danach geprüft; nimmt
