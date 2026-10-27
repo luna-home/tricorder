@@ -3,12 +3,12 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import LcChip from '@renderer/components/LcChip.vue'
+import LcPageHead from '@renderer/components/LcPageHead.vue'
 import LcTimestamp from '@renderer/components/LcTimestamp.vue'
 import QueryState from '@renderer/components/QueryState.vue'
 import { useService } from '@renderer/platform/useService'
 
 import EntryFields from '../components/EntryFields.vue'
-import PageHead from '../components/PageHead.vue'
 import PinRow from '../components/PinRow.vue'
 import { useLogbuchI18n } from '../i18n'
 import { pinColor } from '../pins'
@@ -58,7 +58,7 @@ function newEntry() {
 <template>
   <div class="logbuch-page" data-lc-density="log">
     <PinRow />
-    <PageHead :kicker="lt('open.kicker')" :title="lt('open.title')" :count="entries.length" />
+    <LcPageHead :kicker="lt('open.kicker')" :title="lt('open.title')" :count="entries.length" />
 
     <div class="lc-chips">
       <LcChip :label="lt('actions.new')" color="peach" @click="newEntry" />

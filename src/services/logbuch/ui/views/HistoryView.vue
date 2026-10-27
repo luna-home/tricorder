@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import LcChip from '@renderer/components/LcChip.vue'
+import LcPageHead from '@renderer/components/LcPageHead.vue'
 import LcTimestamp from '@renderer/components/LcTimestamp.vue'
 import { parseNote } from '@renderer/components/note'
 import QueryState from '@renderer/components/QueryState.vue'
@@ -11,7 +12,6 @@ import { useTimeFormat } from '@renderer/time/format'
 
 import { MAX_PINS, type LogbuchEntry } from '../../contract'
 import EntryFields from '../components/EntryFields.vue'
-import PageHead from '../components/PageHead.vue'
 import PinRow from '../components/PinRow.vue'
 import { useLogbuchI18n } from '../i18n'
 
@@ -93,7 +93,7 @@ function press(id: string) {
 <template>
   <div class="logbuch-page" data-lc-density="log">
     <PinRow :project="project" :topic="topic" />
-    <PageHead
+    <LcPageHead
       :kicker="pinned ? `${project} · ${lt('pins.key', { n: pinned.position })}` : project"
       :title="topic"
       :count="entries.length"

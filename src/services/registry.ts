@@ -8,9 +8,12 @@ import { defineRegistry } from '@shared/registry'
 
 import { logbuchContract } from './logbuch/contract'
 import { manifest as logbuchManifest } from './logbuch/manifest'
+import { portsContract } from './ports/contract'
+import { manifest as portsManifest } from './ports/manifest'
 
 export const registry = defineRegistry({
   logbuch: { manifest: logbuchManifest, contract: logbuchContract },
+  ports: { manifest: portsManifest, contract: portsContract },
 })
 
 export type Registry = typeof registry

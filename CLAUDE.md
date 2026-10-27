@@ -1,8 +1,11 @@
 # Tricorder
 
 Luna-Desktop-Client in Electron (macOS und Windows). Eine Plattform für fest eingebaute
-**Client-Dienste**: lokale Werkzeuge (zuerst `logbuch`), Zugang zu Luna Home und
+**Client-Dienste**: lokale Werkzeuge (`logbuch`, `ports`), Zugang zu Luna Home und
 Hintergrunddienste, die im Tray weiterlaufen. Der verbindliche Plan steht in `docs/plan.md`.
+Der Dienst `ports` zeigt die lauschenden Ports mit Programm (macOS: `netstat -anv` plus `ps`,
+Windows: `netstat -ano` plus `tasklist`) und markiert Docker-Ports mit ihrem Container
+(`docker ps`), Plan in `docs/plan-ports.md`.
 
 Daneben liegt das Python-CLI `bin/logbuch` (SQLite, befüllt von den Claude-Code-Hooks in
 `hooks/`, Tests in `tests/`). Tabellen `entries` und `pins` (höchstens 4 angeheftete Themen,
@@ -45,6 +48,8 @@ python3 -m unittest discover -s tests   # Tests des Python-CLI
 ```
 
 Ohne direnv vor jedem Node-Befehl: `source ~/.nvm/nvm.sh && nvm use` (die Standard-Node ist v20).
+Liegt `pnpm` danach nicht im PATH, `corepack pnpm …` aufrufen (nimmt die Version aus
+`packageManager`).
 
 **`ELECTRON_RUN_AS_NODE`:** Terminals in VS Code und Claude Code exportieren
 `ELECTRON_RUN_AS_NODE=1`; Electron startet dann als nacktes Node. `electron.vite.config.mts`
@@ -173,6 +178,8 @@ und `contract.ts`.
 - **Renderer** (`src/renderer/platform/`): `useService(id)` liefert `{ api, on, query, mutation,
   invalidate }` (TanStack Query, Schlüssel `['svc', id, method, args]`); `on` meldet sich beim
   Unmount selbst ab, `mutation` invalidiert bei Erfolg alle Abfragen des Dienstes.
+  `query(method, args, { refetchInterval })` fragt periodisch neu, solange das Fenster sichtbar
+  ist (so pollt `ports`, ohne Hintergrundjob im Main-Prozess).
   `useServiceEventSync()` (in `App.vue`) invalidiert `['svc', id]` bei **jedem** Event eines
   Dienstes und wenn er wieder `online` wird: ein Dienst muss für Live-Updates also nur
   `emit(...)` aufrufen. `useServicesStore` hält den Status aller Dienste.
@@ -218,7 +225,8 @@ und `contract.ts`.
   direnv-Werte nicht durchschlagen); `logbuchCli(db, ...args)` ruft das Python-CLI auf.
 - `e2e/logbuch.spec.ts` ist der Hauptablauf: Startseite -> WO WAR ICH -> neuer Eintrag ->
   Eintrag per CLI erscheint live -> Abschließen mit zwei Taps; dazu fehlende DB -> Yellow Alert.
-- `pnpm dev` zur Prüfung immer mit Timeout starten und danach beenden, mit
+- `pnpm dev` zur Prüfung immer mit Timeout starten und danach beenden (macOS hat kein
+  `timeout`: `perl -e 'alarm 90; exec @ARGV' pnpm dev …`), mit
   `LOGBUCH_DB=<temp>` und `TRICORDER_USER_DATA=<temp>`. Mit `pnpm dev --remoteDebuggingPort
   9333` lässt sich das Dev-Fenster per Playwright `chromium.connectOverCDP` fernsteuern.
 - Vertragstests gegen das Python-CLI rufen `bin/logbuch` mit `LOGBUCH_DB=<temp>` auf.

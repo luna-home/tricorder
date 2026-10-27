@@ -5,10 +5,10 @@ import { onBeforeRouteUpdate, useRoute, useRouter, type LocationQuery } from 'vu
 import LcChip from '@renderer/components/LcChip.vue'
 import LcField from '@renderer/components/LcField.vue'
 import LcFieldArea from '@renderer/components/LcFieldArea.vue'
+import LcPageHead from '@renderer/components/LcPageHead.vue'
 import { useService } from '@renderer/platform/useService'
 
 import { logbuchContract } from '../../contract'
-import PageHead from '../components/PageHead.vue'
 import { useLogbuchI18n } from '../i18n'
 
 // NEUER EINTRAG: ?project=&topic= prefill. With both set (+ STAND on a topic page) the form
@@ -141,7 +141,7 @@ function cancel() {
 
 <template>
   <form class="entry-form" data-lc-density="log" novalidate @submit.prevent="submit">
-    <PageHead
+    <LcPageHead
       :kicker="continuing ? prefill.project : lt('form.kicker')"
       :title="continuing ? prefill.topic : lt('form.title')"
     />

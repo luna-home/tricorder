@@ -20,7 +20,7 @@ describe('App frame', () => {
     expect(wrapper.find('.lc-panel__date').text()).toMatch(/^\S+ \d{2}\.\d{2}\.\d{4}$/)
     expect(wrapper.find('.lc-status').attributes('data-state')).toBe('online')
     expect(wrapper.find('.lc-status').text()).toBe('Online')
-    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch'])
+    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch', 'Ports'])
     expect(wrapper.find('.lc-nav[aria-current="page"]').text()).toBe('Start')
     expect(wrapper.find('.lc-panel').classes()).not.toContain('lc-red-alert')
   })
@@ -38,16 +38,16 @@ describe('App frame', () => {
   it('opens a service from its tile; the rail lists only START and the services', async () => {
     installBridge({ handlers: { 'logbuch.projects': () => [], 'logbuch.openTopics': () => [] } })
     const { wrapper, router } = await mountApp('/')
-    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch'])
+    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch', 'Ports'])
     await wrapper.find('.lc-tile').trigger('click')
     await settle()
     expect(router.currentRoute.value.name).toBe('logbuch')
-    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch'])
+    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch', 'Ports'])
     expect(wrapper.find('.lc-nav[aria-current="page"]').text()).toBe('Logbuch')
 
     await router.push('/logbuch/neu')
     await settle()
-    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch'])
+    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch', 'Ports'])
     expect(wrapper.find('.lc-nav[aria-current="page"]').text()).toBe('Logbuch')
   })
 
@@ -175,6 +175,6 @@ describe('App frame', () => {
   it('renders in English', async () => {
     installBridge()
     const { wrapper } = await mountApp('/', 'en')
-    expect(railLabels(wrapper)).toEqual(['Home', 'Logbook'])
+    expect(railLabels(wrapper)).toEqual(['Home', 'Logbook', 'Ports'])
   })
 })

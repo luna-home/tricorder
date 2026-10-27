@@ -1,0 +1,26 @@
+{
+  "kicker": "Ports",
+  "title": "Ports in use",
+  "list": "Listening ports",
+  "filter": {
+    "label": "Filter",
+    "all": "All",
+    "tcp": "TCP",
+    "udp": "UDP",
+    "external": "External only",
+    "docker": "Docker only"
+  },
+  "scope": {
+    "all": "External",
+    "interface": "Address",
+    "loopback": "Local"
+  },
+  "pid": "PID",
+  "unknownProcess": "Unknown",
+  "docker": "Docker",
+  "empty": "No ports in use",
+  "emptyHint": "No program matching the filter is listening right now",
+  "reasons": {
+    "unsupported": "Operating system not supported"
+  }
+}

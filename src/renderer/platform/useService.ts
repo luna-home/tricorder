@@ -16,6 +16,11 @@ import { callService, createServiceClient, getBridge, serviceQueryKey } from './
 export interface ServiceQueryOptions {
   /** The query only runs while this is true. */
   enabled?: MaybeRefOrGetter<boolean>
+  /**
+   * Refetches every `ms` milliseconds. TanStack pauses the interval while the document is hidden,
+   * so a window hidden in the tray stops polling.
+   */
+  refetchInterval?: number
 }
 
 /**
@@ -53,6 +58,7 @@ export function useService<Id extends ServiceId>(id: Id) {
         queryKey: serviceQueryKey(id, method, input),
         queryFn: () => callService(id, method, input) as Promise<MethodResult<C, M>>,
         enabled: toValue(options.enabled) ?? true,
+        refetchInterval: options.refetchInterval,
       }
     })
   }

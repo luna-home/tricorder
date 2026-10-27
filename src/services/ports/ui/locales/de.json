@@ -1,0 +1,26 @@
+{
+  "kicker": "Ports",
+  "title": "Belegte Ports",
+  "list": "Lauschende Ports",
+  "filter": {
+    "label": "Filter",
+    "all": "Alle",
+    "tcp": "TCP",
+    "udp": "UDP",
+    "external": "Nur extern",
+    "docker": "Nur Docker"
+  },
+  "scope": {
+    "all": "Extern",
+    "interface": "Adresse",
+    "loopback": "Lokal"
+  },
+  "pid": "PID",
+  "unknownProcess": "Unbekannt",
+  "docker": "Docker",
+  "empty": "Keine belegten Ports",
+  "emptyHint": "Gerade lauscht kein Programm, das zum Filter passt",
+  "reasons": {
+    "unsupported": "Betriebssystem nicht unterstützt"
+  }
+}

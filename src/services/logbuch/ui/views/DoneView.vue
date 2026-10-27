@@ -3,11 +3,11 @@ import { computed, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import LcFieldArea from '@renderer/components/LcFieldArea.vue'
+import LcPageHead from '@renderer/components/LcPageHead.vue'
 import { LcCommandTile } from '@renderer/design/luna-console/vue'
 import { useService } from '@renderer/platform/useService'
 
 import EntryFields from '../components/EntryFields.vue'
-import PageHead from '../components/PageHead.vue'
 import { useLogbuchI18n } from '../i18n'
 
 // ABSCHLIESSEN: two taps. The first arms the tile (it turns red and asks to confirm), the second
@@ -68,7 +68,7 @@ onUnmounted(() => clearTimeout(disarmTimer))
 
 <template>
   <div class="done-page" data-lc-density="log">
-    <PageHead :kicker="`${project} / ${latest?.topic ?? topic}`" :title="lt('done.title')" />
+    <LcPageHead :kicker="`${project} / ${latest?.topic ?? topic}`" :title="lt('done.title')" />
 
     <section v-if="latest" class="done-page__last" :aria-label="lt('done.last')">
       <span class="lc-type-label lc-text-lavender">{{ lt('done.last') }}</span>
