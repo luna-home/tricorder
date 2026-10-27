@@ -12,7 +12,7 @@ import { getBridge } from './platform/client'
 import { useErrorText } from './platform/errors'
 import { useServicesStore } from './platform/status'
 import { useServiceEventSync } from './platform/sync'
-import { serviceAlert, serviceNavRoutes, serviceUiIds } from './router/services'
+import { serviceAlert, serviceUiIds } from './router/services'
 import { formatDay } from './time/format'
 import { useNow } from './time/useNow'
 
@@ -39,8 +39,9 @@ const manifests = Object.values(registry)
   .sort((a, b) => a.order - b.order)
 
 const serviceId = computed(() => route.meta.serviceId)
-const subPages = computed(() => (serviceId.value ? serviceNavRoutes(serviceId.value) : []))
 
+// The rail is fixed: START and one button per service. A service's own pages and commands live
+// on its pages, never in the rail, so the rail stays the same while more services arrive.
 const pages = computed<LcNavPage[]>(() => [
   { name: 'home', label: t('nav.home'), color: 'mauve' },
   ...manifests.map((manifest) => ({
@@ -48,19 +49,12 @@ const pages = computed<LcNavPage[]>(() => [
     label: t(manifest.nameKey),
     color: manifest.color,
   })),
-  ...subPages.value.map((page) => ({ name: page.name, label: t(page.navKey), color: page.color })),
 ])
 
-const currentPage = computed(() => {
-  const name = typeof route.name === 'string' ? route.name : undefined
-  if (name && subPages.value.some((page) => page.name === name)) return name
-  return serviceId.value ?? 'home'
-})
+const currentPage = computed(() => serviceId.value ?? 'home')
 
 function navigate(name: string) {
-  if (name === 'home') void router.push('/')
-  else if (serviceUiIds.has(name)) void router.push(`/${name}`)
-  else void router.push({ name })
+  void router.push(name === 'home' ? '/' : `/${name}`)
 }
 
 const serviceName = (id: string) => {

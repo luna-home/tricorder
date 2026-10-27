@@ -1,7 +1,4 @@
 {
-  "nav": {
-    "new": "Neu"
-  },
   "fields": {
     "project": "Projekt",
     "topic": "Thema",
@@ -23,7 +20,10 @@
     "finish": "Abschließen",
     "back": "Zurück",
     "save": "Speichern",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "continue": "+ Stand",
+    "pin": "Anheften",
+    "unpin": "Lösen"
   },
   "open": {
     "kicker": "Logbuch",
@@ -40,26 +40,28 @@
     "done": "Abgeschlossen",
     "closed": "Thema abgeschlossen",
     "notFound": "Thema nicht gefunden",
-    "notFoundHint": "Es gibt in diesem Projekt keine Einträge zu diesem Thema"
+    "notFoundHint": "Es gibt in diesem Projekt keine Einträge zu diesem Thema",
+    "current": "Aktueller Stand"
   },
   "form": {
     "kicker": "Logbuch",
     "title": "Neuer Eintrag",
     "saving": "Speichert",
     "failed": "Speichern fehlgeschlagen",
-    "shortcut": "Cmd/Strg + Enter speichert",
+    "shortcut": "„- “ am Zeilenanfang setzt Spiegelstriche, Cmd/Strg + Enter speichert",
     "placeholders": {
       "project": "Projektname",
       "topic": "Woran du arbeitest",
-      "status": "Wo es steht",
-      "nextStep": "Der nächste konkrete Schritt",
-      "openQuestions": "Fragen, Blocker",
+      "status": "- Wo es steht",
+      "nextStep": "- Der nächste konkrete Schritt",
+      "openQuestions": "- Fragen, Blocker",
       "refs": "Tickets, Dateien, Branches, URLs"
     },
     "errors": {
       "required": "Pflichtfeld",
       "invalid": "Ungültige Eingabe"
-    }
+    },
+    "carried": "Vorbelegt mit dem letzten Stand: nur ändern, was sich bewegt hat"
   },
   "done": {
     "title": "Abschließen",
@@ -87,5 +89,10 @@
   "reasons": {
     "dbMissing": "Logbuch-Datenbank nicht gefunden",
     "dbOpenFailed": "Logbuch-Datenbank lässt sich nicht öffnen"
+  },
+  "pins": {
+    "label": "Angeheftete Themen",
+    "full": "Alle {max} Plätze belegt: erst ein Thema lösen",
+    "key": "Cmd/Strg + {n}"
   }
 }

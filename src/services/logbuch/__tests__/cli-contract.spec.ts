@@ -162,6 +162,34 @@ describe('logbuch service vs. bin/logbuch', () => {
     await expect(fake.call('done', { project: 'p', topic: 'ÜBUNG' })).rejects.toThrow(/ambiguous/)
   })
 
+  it('shares pins with `logbuch anheften` / `loesen`; fertig releases one', async () => {
+    for (const topic of ['A', 'B', 'C']) run('merk', topic, topic, '--projekt', 'p')
+    expect(run('anheften', 'B', '--projekt', 'p')).toContain('Angeheftet: [1] p / B')
+    expect(await fake.call('pin', { project: 'p', topic: 'c' })).toEqual({
+      position: 2,
+      project: 'p',
+      topic: 'C',
+    })
+    expect(run('anheften', 'C', '--projekt', 'p')).toContain('Schon angeheftet: [2] p / C')
+    expect(await fake.call('pins')).toEqual([
+      { position: 1, project: 'p', topic: 'B' },
+      { position: 2, project: 'p', topic: 'C' },
+    ])
+    // `wo` lists pinned topics first, by position.
+    expect(run('wo', '--projekt', 'p').match(/^■.*$/gm)).toEqual([
+      expect.stringMatching(/^■ \[1\] p \/ B /),
+      expect.stringMatching(/^■ \[2\] p \/ C /),
+      expect.stringMatching(/^■ p \/ A /),
+    ])
+
+    run('fertig', 'B', '--projekt', 'p')
+    await fake.call('unpin', { project: 'p', topic: 'C' })
+    expect(await fake.call('pins')).toEqual([])
+    await fake.call('pin', { project: 'p', topic: 'A' })
+    await fake.call('done', { project: 'p', topic: 'A' })
+    expect(run('wo', '--projekt', 'p')).not.toContain('[')
+  })
+
   it('rejects ambiguous topics like `logbuch fertig`', async () => {
     run('merk', 'Port-Scanner', 'x', '--projekt', 'p')
     run('merk', 'Portal', 'y', '--projekt', 'p')

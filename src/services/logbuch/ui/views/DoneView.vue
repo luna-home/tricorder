@@ -67,7 +67,7 @@ onUnmounted(() => clearTimeout(disarmTimer))
 </script>
 
 <template>
-  <div class="done-page">
+  <div class="done-page" data-lc-density="log">
     <PageHead :kicker="`${project} / ${latest?.topic ?? topic}`" :title="lt('done.title')" />
 
     <section v-if="latest" class="done-page__last" :aria-label="lt('done.last')">

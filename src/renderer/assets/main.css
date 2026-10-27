@@ -2,6 +2,7 @@
 @import '../design/luna-console/theme.css';
 @import '../design/luna-console/components.css';
 @import './type.css';
+@import './density.css';
 
 #app {
   height: 100dvh;

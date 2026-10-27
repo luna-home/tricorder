@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { computed, useId, useTemplateRef } from 'vue'
+import { computed, nextTick, useId, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-// Multi-line text field, same look and contract as LcField. Cmd/Ctrl+Enter emits `submit`.
+import { continueList } from './note'
+
+// Multi-line text field, same look and contract as LcField. Cmd/Ctrl+Enter emits `submit`;
+// Enter in a Spiegelstrich line (`- `) continues the list, Enter on an empty item ends it.
 const props = withDefaults(
   defineProps<{
     label: string
@@ -41,6 +44,16 @@ const describedBy = computed(
       .join(' ') || undefined,
 )
 
+function onEnter(event: KeyboardEvent) {
+  const el = area.value
+  if (!el || event.isComposing) return
+  const next = continueList(model.value, el.selectionStart, el.selectionEnd)
+  if (!next) return
+  event.preventDefault()
+  model.value = next.value
+  void nextTick(() => el.setSelectionRange(next.caret, next.caret))
+}
+
 defineExpose({ focus: () => area.value?.focus() })
 </script>
 
@@ -65,6 +78,7 @@ defineExpose({ focus: () => area.value?.focus() })
       :aria-required="required ? 'true' : undefined"
       :aria-invalid="error ? 'true' : 'false'"
       :aria-describedby="describedBy"
+      @keydown.enter.exact="onEnter"
       @keydown.meta.enter.prevent="emit('submit')"
       @keydown.ctrl.enter.prevent="emit('submit')"
     />

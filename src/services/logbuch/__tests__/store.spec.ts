@@ -5,7 +5,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { defaultDbPath, resolveDbLocation } from '../main/paths'
-import { DbMissingError, LogbuchStore, TopicResolveError } from '../main/store'
+import { DbMissingError, LogbuchStore, PinError, TopicResolveError } from '../main/store'
 import { tempDb } from './helpers'
 
 // Mirrors tests/test_logbuch.py for the parts the service reproduces.
@@ -31,9 +31,45 @@ describe('LogbuchStore', () => {
       .prepare("SELECT name FROM sqlite_master WHERE type IN ('table', 'index') ORDER BY name")
       .all()
       .map((row) => row.name)
-    expect(names).toEqual(['entries', 'entries_topic'])
+    expect(names).toEqual([
+      'entries',
+      'entries_topic',
+      'pins',
+      'sqlite_autoindex_pins_1',
+      'sqlite_autoindex_pins_2',
+    ])
     expect(db.prepare('PRAGMA journal_mode').get()?.journal_mode).toBe('delete')
     db.close()
+  })
+
+  it('pins open topics on the lowest free position, at most four', () => {
+    for (const topic of ['A', 'B', 'C', 'D', 'E']) merk('p', topic, topic)
+    expect(store.pin('p', 'c')).toEqual({ position: 1, project: 'p', topic: 'C' })
+    expect(store.pin('p', 'A').position).toBe(2)
+    expect(store.pin('p', 'C').position).toBe(1)
+    store.pin('p', 'B')
+    store.pin('p', 'D')
+    expect(() => store.pin('p', 'E')).toThrow(PinError)
+
+    store.unpin('p', 'A')
+    store.unpin('p', 'A')
+    expect(store.pin('p', 'E').position).toBe(2)
+    expect(store.pins().map((pin) => [pin.position, pin.topic])).toEqual([
+      [1, 'C'],
+      [2, 'E'],
+      [3, 'B'],
+      [4, 'D'],
+    ])
+  })
+
+  it('a finished topic gives up its pin and cannot be pinned again', () => {
+    merk('p', 'A', 'a')
+    merk('p', 'B', 'b')
+    store.pin('p', 'A')
+    store.pin('p', 'B')
+    store.done('p', 'A')
+    expect(store.pins().map((pin) => [pin.position, pin.topic])).toEqual([[2, 'B']])
+    expect(() => store.pin('p', 'A')).toThrow(/finished/)
   })
 
   it('refuses a missing file and does not create it', () => {

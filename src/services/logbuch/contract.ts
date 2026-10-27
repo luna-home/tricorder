@@ -14,6 +14,9 @@ import { defineContract } from '@shared/contract'
 /** Default number of topics `openTopics` returns, as `logbuch wo` (`-n 10`). */
 export const OPEN_TOPICS_DEFAULT_LIMIT = 10
 
+/** At most this many topics are pinned at once, on keys Cmd/Ctrl+1..4 (`MAX_PINS` in the CLI). */
+export const MAX_PINS = 4
+
 /** Values of `source` written by the CLI, the hooks and this app. Older rows may hold others. */
 export const ENTRY_SOURCES = ['manual', 'claude', 'compact', 'session-end'] as const
 
@@ -52,6 +55,14 @@ export const entrySchema = z.object({
 })
 
 const topicRef = z.object({ project: name, topic: name })
+const pinSchema = z.object({
+  /** 1..{@link MAX_PINS}; stays the same while the topic is pinned. */
+  position: z.number().int().min(1).max(MAX_PINS),
+  project: z.string(),
+  /** Spelling as stored with the topic's entries. */
+  topic: z.string(),
+})
+
 const writeResult = z.object({
   /** Project and topic as stored, i.e. with the topic's existing spelling. */
   project: z.string(),
@@ -137,6 +148,30 @@ export const logbuchContract = defineContract({
       output: writeResult,
     },
 
+    /**
+     * Pinned topics by position (`pins` table). A topic loses its pin when it is finished, the
+     * other pins keep their positions.
+     */
+    pins: {
+      input: z.void(),
+      output: z.array(pinSchema),
+    },
+
+    /**
+     * Pins an open topic on the lowest free position (`logbuch anheften`); a pinned topic keeps
+     * its position. Fails for a finished topic or when all {@link MAX_PINS} positions are taken.
+     */
+    pin: {
+      input: topicRef,
+      output: pinSchema,
+    },
+
+    /** Unpins a topic (`logbuch loesen`); a topic that is not pinned is fine. */
+    unpin: {
+      input: topicRef,
+      output: z.void(),
+    },
+
     /** Which database the service uses and whether it exists. Does not create the file. */
     dbInfo: {
       input: z.void(),
@@ -176,4 +211,5 @@ export const logbuchContract = defineContract({
 
 export type LogbuchContract = typeof logbuchContract
 export type LogbuchEntry = z.output<typeof entrySchema>
+export type LogbuchPin = z.output<typeof pinSchema>
 export type LogbuchSettings = z.output<LogbuchContract['settings']>

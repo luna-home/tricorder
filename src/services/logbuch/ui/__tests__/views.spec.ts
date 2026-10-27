@@ -44,6 +44,7 @@ function bridge(handlers: Record<string, Handler> = {}) {
       'logbuch.openTopics': () => [],
       'logbuch.topics': () => [],
       'logbuch.history': () => [],
+      'logbuch.pins': () => [],
       ...handlers,
     },
   })
@@ -91,11 +92,28 @@ describe('WO WAR ICH', () => {
     expect(topics[1]!.findAll('dt').map((dt) => dt.text())).toEqual(['Stand', 'Weiter'])
   })
 
+  it('reads like a protocol: Spiegelstriche, Weiter indented under Stand', async () => {
+    bridge({
+      'logbuch.openTopics': () => [
+        entry({ status: '- Gerüst steht\n- Tests grün', nextStep: '- Views bauen' }),
+      ],
+    })
+    const { wrapper } = await mountApp('/logbuch')
+
+    expect(wrapper.find('.logbuch-page').attributes('data-lc-density')).toBe('log')
+    const rows = wrapper.findAll('.entry-fields__row')
+    expect(rows[0]!.findAll('li').map((li) => li.text())).toEqual(['Gerüst steht', 'Tests grün'])
+    const indented = wrapper.findAll('.entry-fields__row--indent')
+    expect(indented.map((row) => row.find('dt').text())).toEqual(['Weiter'])
+    expect(indented[0]!.find('li').text()).toBe('Views bauen')
+  })
+
   it('filters by project with option pills and keeps the filter in the URL', async () => {
     const mock = bridge({ 'logbuch.openTopics': () => [entry()] })
     const { wrapper, router } = await mountApp('/logbuch')
 
-    const pills = wrapper.findAll('.lc-option')
+    const filter = () => wrapper.find('[role="group"]').findAll('.lc-chip')
+    const pills = filter()
     expect(pills.map((pill) => pill.text())).toEqual(['Alle', 'tricorder', 'kompas'])
     expect(pills[0]!.attributes('aria-pressed')).toBe('true')
 
@@ -103,9 +121,9 @@ describe('WO WAR ICH', () => {
     await settle()
     expect(router.currentRoute.value.query).toEqual({ project: 'kompas' })
     expect(calls(mock, 'openTopics').at(-1)).toEqual({ project: 'kompas', all: true })
-    expect(wrapper.findAll('.lc-option')[2]!.attributes('aria-pressed')).toBe('true')
+    expect(filter()[2]!.attributes('aria-pressed')).toBe('true')
 
-    await wrapper.findAll('.lc-option')[0]!.trigger('click')
+    await filter()[0]!.trigger('click')
     await settle()
     expect(router.currentRoute.value.query).toEqual({})
   })
@@ -141,7 +159,7 @@ describe('WO WAR ICH', () => {
     bridge({ 'logbuch.projects': () => [] })
     const { wrapper } = await mountApp('/logbuch')
     expect(wrapper.text()).toContain('Keine offenen Themen')
-    expect(wrapper.find('.lc-options').exists()).toBe(false)
+    expect(wrapper.find('[role="group"]').exists()).toBe(false)
   })
 
   it('shows a failed request', async () => {
@@ -164,25 +182,129 @@ describe('WO WAR ICH', () => {
   })
 })
 
-describe('VERLAUF', () => {
+describe('pins', () => {
+  const pins = [
+    { position: 1, project: 'tricorder', topic: 'Electron-Client' },
+    { position: 3, project: 'kompas', topic: 'BAT KW43' },
+  ]
+
+  it('shows the pin row, lists pinned topics first and jumps with Cmd/Ctrl+n', async () => {
+    bridge({
+      'logbuch.pins': () => pins,
+      'logbuch.openTopics': () => [
+        entry({ project: 'luna', topic: 'Neu' }),
+        entry({ project: 'kompas', topic: 'BAT KW43' }),
+        entry({ topic: 'Electron-Client' }),
+      ],
+    })
+    const { wrapper, router } = await mountApp('/logbuch')
+
+    const row = wrapper.find('nav[aria-label="Angeheftete Themen"]')
+    expect(row.attributes('aria-label')).toBe('Angeheftete Themen')
+    expect(row.findAll('button').map((item) => item.text())).toEqual([
+      '1 Electron-Client',
+      '3 BAT KW43',
+    ])
+    expect(wrapper.findAll('.topic__name').map((name) => name.text())).toEqual([
+      'Electron-Client',
+      'BAT KW43',
+      'Neu',
+    ])
+    expect(wrapper.findAll('.topic__pin').map((badge) => badge.text())).toEqual(['1', '3'])
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '3', metaKey: true }))
+    await settle()
+    expect(router.currentRoute.value.params).toEqual({ project: 'kompas', topic: 'BAT KW43' })
+    expect(wrapper.find('nav[aria-label="Angeheftete Themen"] [aria-current="page"]').text()).toBe(
+      '3 BAT KW43',
+    )
+
+    // An empty slot or a key without the modifier does nothing.
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '2', ctrlKey: true }))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }))
+    await settle()
+    expect(router.currentRoute.value.params).toEqual({ project: 'kompas', topic: 'BAT KW43' })
+  })
+
+  it('pins and unpins from the topic page', async () => {
+    let current: typeof pins = []
+    const mock = bridge({
+      'logbuch.history': () => [entry()],
+      'logbuch.pins': () => current,
+      'logbuch.pin': () => {
+        current = [pins[0]!]
+        return pins[0]
+      },
+      'logbuch.unpin': () => {
+        current = []
+      },
+    })
+    const { wrapper } = await mountApp('/logbuch/tricorder/electron-client')
+    expect(wrapper.find('nav[aria-label="Angeheftete Themen"]').exists()).toBe(false)
+
+    await button(wrapper, 'Anheften').trigger('click')
+    await settle()
+    expect(calls(mock, 'pin')).toEqual([{ project: 'tricorder', topic: 'Electron-Client' }])
+    expect(wrapper.find('.page-head').text()).toContain('Cmd/Strg + 1')
+    expect(wrapper.find('nav[aria-label="Angeheftete Themen"] [aria-current="page"]').text()).toBe(
+      '1 Electron-Client',
+    )
+
+    await button(wrapper, 'Lösen').trigger('click')
+    await settle()
+    expect(calls(mock, 'unpin')).toEqual([{ project: 'tricorder', topic: 'Electron-Client' }])
+    expect(button(wrapper, 'Anheften').exists()).toBe(true)
+  })
+
+  it('says when all four slots are taken instead of calling pin', async () => {
+    const full = [1, 2, 3, 4].map((position) => ({ position, project: 'x', topic: `T${position}` }))
+    const mock = bridge({ 'logbuch.history': () => [entry()], 'logbuch.pins': () => full })
+    const { wrapper } = await mountApp('/logbuch/tricorder/electron-client')
+    await button(wrapper, 'Anheften').trigger('click')
+    await settle()
+    expect(calls(mock, 'pin')).toEqual([])
+    expect(wrapper.find('[role="status"]').text()).toBe(
+      'Alle 4 Plätze belegt: erst ein Thema lösen',
+    )
+  })
+})
+
+describe('THEMA', () => {
   const rows = [
-    entry({ ts: '2026-10-20T09:00:00+02:00', status: 'Angefangen', source: 'manual' }),
+    entry({ ts: '2026-10-19T09:00:00+02:00', status: 'Angefangen', source: 'manual' }),
+    entry({
+      ts: '2026-10-20T09:00:00+02:00',
+      status: '- Zweiter Schritt\n- mehr',
+      source: 'manual',
+    }),
     entry({ ts: '2026-10-21T22:52:00+02:00', status: 'Gerüst steht', source: 'session-end' }),
   ]
 
-  it('lists all entries oldest first with time, source and fields', async () => {
+  it('shows the newest entry in full and older ones as lines, newest first', async () => {
     const mock = bridge({ 'logbuch.history': () => rows })
     const { wrapper } = await mountApp('/logbuch/tricorder/electron-client')
 
     expect(calls(mock, 'history')).toEqual([{ project: 'tricorder', topic: 'electron-client' }])
     // The heading uses the stored spelling.
     expect(wrapper.find('.page-head').text()).toContain('Electron-Client')
+    expect(wrapper.find('.page-head').text()).toContain('003')
+    const current = wrapper.find('.current')
+    expect(current.find('time').text()).toBe('Mi 21.10.2026 · 22:52')
+    expect(current.find('.entry__meta').text()).toContain('Sitzungsende')
+    expect(current.findAll('dt').map((dt) => dt.text())).toEqual(['Stand', 'Weiter', 'Bezug'])
+    expect(current.find('dd').text()).toBe('Gerüst steht')
+
     const items = wrapper.findAll('.entry')
-    expect(items).toHaveLength(2)
-    expect(items[0]!.find('time').text()).toBe('Di 20.10.2026 · 09:00')
-    expect(items[0]!.find('.entry__meta').text()).toContain('Manuell')
-    expect(items[1]!.find('.entry__meta').text()).toContain('Sitzungsende')
-    expect(items[1]!.find('dd').text()).toBe('Gerüst steht')
+    expect(items.map((item) => item.find('time').text())).toEqual([
+      'Di 20.10.2026 · 09:00',
+      'Mo 19.10.2026 · 09:00',
+    ])
+    expect(items.map((item) => item.find('.entry__line').text())).toEqual([
+      'Zweiter Schritt',
+      'Angefangen',
+    ])
+    expect(items[0]!.find('details').attributes('open')).toBeUndefined()
+    expect(items[0]!.find('.entry__body').text()).toContain('Manuell')
     expect(wrapper.find('.entry__done').exists()).toBe(false)
     expect(button(wrapper, 'Abschließen').exists()).toBe(true)
   })
@@ -195,17 +317,17 @@ describe('VERLAUF', () => {
       ],
     })
     const { wrapper } = await mountApp('/logbuch/tricorder/Electron-Client')
-    const done = wrapper.findAll('.entry').at(-1)!
-    expect(done.find('.entry__done').text()).toBe('Abgeschlossen')
-    expect(done.findAll('dt').map((dt) => dt.text())).toEqual(['Notiz'])
+    const current = wrapper.find('.current')
+    expect(current.find('.entry__done').text()).toBe('Abgeschlossen')
+    expect(current.findAll('dt').map((dt) => dt.text())).toEqual(['Notiz'])
     expect(wrapper.text()).toContain('Thema abgeschlossen')
     expect(wrapper.findAll('button').some((item) => item.text() === 'Abschließen')).toBe(false)
   })
 
-  it('leads to a prefilled new entry and to finishing', async () => {
+  it('continues the topic with + Stand and leads to finishing', async () => {
     bridge({ 'logbuch.history': () => rows })
     const { wrapper, router } = await mountApp('/logbuch/tricorder/electron-client')
-    await button(wrapper, 'Neuer Eintrag').trigger('click')
+    await button(wrapper, '+ Stand').trigger('click')
     await settle()
     expect(router.currentRoute.value.name).toBe('logbuch.new')
     expect(router.currentRoute.value.query).toEqual({
@@ -238,11 +360,41 @@ describe('NEUER EINTRAG', () => {
     expect(field(wrapper, 'topic').element.value).toBe('Electron-Client')
   })
 
-  it('starts over when the rail opens a blank form from a prefilled one', async () => {
+  it('continues a topic: the newest entry prefills the notes', async () => {
+    const mock = bridge({
+      'logbuch.history': () => [
+        entry({ status: '- eins\n- zwei', nextStep: '- drei', openQuestions: null }),
+      ],
+    })
+    const { wrapper } = await mountApp('/logbuch/neu?project=tricorder&topic=Electron-Client')
+    await settle()
+    expect(calls(mock, 'history')).toEqual([
+      { project: 'tricorder', topic: 'Electron-Client', limit: 1 },
+    ])
+    expect(wrapper.find('.page-head').text()).toContain('Electron-Client')
+    expect(field(wrapper, 'status').element.value).toBe('- eins\n- zwei')
+    expect(field(wrapper, 'nextStep').element.value).toBe('- drei')
+    expect(field(wrapper, 'openQuestions').element.value).toBe('')
+    expect(field(wrapper, 'refs').element.value).toBe('docs/plan.md')
+  })
+
+  it('does not carry over a finished topic or a blank form', async () => {
+    const mock = bridge({ 'logbuch.history': () => [entry({ kind: 'done', status: 'Fertig' })] })
+    const { wrapper } = await mountApp('/logbuch/neu?project=tricorder&topic=Electron-Client')
+    await settle()
+    expect(field(wrapper, 'status').element.value).toBe('')
+
+    const blank = await mountApp('/logbuch/neu?project=tricorder')
+    await settle()
+    expect(field(blank.wrapper, 'status').element.value).toBe('')
+    expect(calls(mock, 'history')).toHaveLength(1)
+  })
+
+  it('starts over when a blank form follows a prefilled one', async () => {
     bridge()
     const { wrapper, router } = await mountApp('/logbuch/neu?project=luna&topic=X')
     await field(wrapper, 'status').setValue('halb getippt')
-    await button(wrapper, 'Neu').trigger('click')
+    await router.push('/logbuch/neu')
     await settle()
     expect(router.currentRoute.value.fullPath).toBe('/logbuch/neu')
     for (const name of ['project', 'topic', 'status']) {

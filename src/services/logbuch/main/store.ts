@@ -6,7 +6,7 @@ import { statSync } from 'node:fs'
 import { DatabaseSync, type SQLOutputValue } from 'node:sqlite'
 import { pathToFileURL } from 'node:url'
 
-import type { LogbuchEntry } from '../contract'
+import { type LogbuchEntry, type LogbuchPin, MAX_PINS } from '../contract'
 import { localIsoSeconds } from './time'
 
 /** `SCHEMA` of `bin/logbuch`, verbatim. */
@@ -26,6 +26,13 @@ CREATE TABLE IF NOT EXISTS entries (
     cwd TEXT
 );
 CREATE INDEX IF NOT EXISTS entries_topic ON entries (project, topic COLLATE NOCASE, ts);
+CREATE TABLE IF NOT EXISTS pins (
+    project TEXT NOT NULL,
+    topic TEXT NOT NULL COLLATE NOCASE,
+    position INTEGER NOT NULL UNIQUE,    -- 1..4, Cmd/Ctrl+position in the app
+    ts TEXT NOT NULL,
+    PRIMARY KEY (project, topic)
+);
 `
 
 export const BUSY_TIMEOUT_MS = 10_000
@@ -43,6 +50,14 @@ export class TopicResolveError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'TopicResolveError'
+  }
+}
+
+/** `pin_topic` refused: the topic is finished, or every position is taken. */
+export class PinError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'PinError'
   }
 }
 
@@ -227,6 +242,10 @@ export class LogbuchStore {
           null,
         )
       const row = this.db.prepare('SELECT * FROM entries WHERE id = ?').get(lastInsertRowid)
+      // A finished topic gives up its pin; the other pins keep their keys.
+      if (fields.kind === 'done') {
+        this.db.prepare('DELETE FROM pins WHERE project = ? AND topic = ?').run(project, topic)
+      }
       this.db.exec('COMMIT')
       return { project, topic, entry: toEntry(row as Row) }
     } catch (error) {
@@ -262,6 +281,63 @@ export class LogbuchStore {
   done(project: string, query: string, note?: string, now = new Date()): WriteResult {
     const topic = this.resolveTopic(project, query)
     return this.addEntry(project, topic, { kind: 'done', status: note ?? null }, now)
+  }
+
+  /** `pins`: every pinned topic by position. */
+  pins(): LogbuchPin[] {
+    return this.db
+      .prepare('SELECT position, project, topic FROM pins ORDER BY position')
+      .all()
+      .map((row) => ({
+        position: Number(row.position),
+        project: String(row.project),
+        topic: String(row.topic),
+      }))
+  }
+
+  /**
+   * `cmd_anheften`: resolves the topic and pins it on the lowest free position; an already pinned
+   * topic keeps its position. Throws {@link PinError} for a finished topic or when all
+   * {@link MAX_PINS} positions are taken.
+   */
+  pin(project: string, query: string, now = new Date()): LogbuchPin {
+    const topic = this.resolveTopic(project, query)
+    this.db.exec('BEGIN IMMEDIATE')
+    try {
+      const known = this.db
+        .prepare('SELECT position FROM pins WHERE project = ? AND topic = ?')
+        .get(project, topic)
+      if (known) {
+        this.db.exec('COMMIT')
+        return { position: Number(known.position), project, topic }
+      }
+      const last = this.db
+        .prepare(
+          'SELECT kind FROM entries WHERE project = ? AND topic = ? COLLATE NOCASE' +
+            ' ORDER BY id DESC LIMIT 1',
+        )
+        .get(project, topic)
+      if (!last || last.kind === 'done') {
+        throw new PinError(`"${topic}" is finished; only open topics can be pinned.`)
+      }
+      const taken = new Set(this.pins().map((pin) => pin.position))
+      const position = Array.from({ length: MAX_PINS }, (_, i) => i + 1).find((n) => !taken.has(n))
+      if (!position) throw new PinError(`All ${MAX_PINS} pins are taken; unpin a topic first.`)
+      this.db
+        .prepare('INSERT INTO pins (project, topic, position, ts) VALUES (?,?,?,?)')
+        .run(project, topic, position, localIsoSeconds(now))
+      this.db.exec('COMMIT')
+      return { position, project, topic }
+    } catch (error) {
+      if (this.db.isTransaction) this.db.exec('ROLLBACK')
+      throw error
+    }
+  }
+
+  /** `cmd_loesen`: unpins the topic; a topic that is not pinned is fine. */
+  unpin(project: string, query: string): void {
+    const topic = this.resolveTopic(project, query)
+    this.db.prepare('DELETE FROM pins WHERE project = ? AND topic = ?').run(project, topic)
   }
 
   count(): number {

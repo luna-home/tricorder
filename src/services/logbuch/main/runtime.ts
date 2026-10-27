@@ -170,6 +170,16 @@ export function startLogbuch(
     scheduleRefresh()
     return result
   })
+  ctx.handle('pins', () => requireStore().pins())
+  ctx.handle('pin', ({ project, topic }) => {
+    const result = requireStore().pin(project, topic)
+    scheduleRefresh()
+    return result
+  })
+  ctx.handle('unpin', ({ project, topic }) => {
+    requireStore().unpin(project, topic)
+    scheduleRefresh()
+  })
   ctx.handle('dbInfo', () => {
     syncStore()
     return {

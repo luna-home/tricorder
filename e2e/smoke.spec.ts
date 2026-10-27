@@ -32,3 +32,27 @@ test('the window follows the language the main process picked', async () => {
     await close()
   }
 })
+
+test('the frame picks its density from the pointer, data-lc-density overrides it', async () => {
+  const { app, close } = await launchApp()
+  try {
+    const page = await app.firstWindow()
+    const nav = page.locator('.lc-nav').first()
+    await expect(nav).toBeVisible()
+    const navHeight = () => nav.evaluate((element) => element.getBoundingClientRect().height)
+    const setDensity = (density: string) =>
+      page.evaluate(
+        (value) => document.documentElement.setAttribute('data-lc-density', value),
+        density,
+      )
+
+    const fine = await page.evaluate(() => matchMedia('(pointer: fine)').matches)
+    expect(await navHeight()).toBe(fine ? 34 : 50)
+    await setDensity('touch')
+    expect(await navHeight()).toBe(50)
+    await setDensity('desk')
+    expect(await navHeight()).toBe(34)
+  } finally {
+    await close()
+  }
+})

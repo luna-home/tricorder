@@ -173,4 +173,27 @@ describe('LcFieldArea', () => {
     await area.trigger('keydown', { key: 'Enter', ctrlKey: true })
     expect(submitted.value).toBe(2)
   })
+
+  it('continues a Spiegelstrich list on Enter and ends it on an empty item', async () => {
+    const { value, area } = mountArea()
+    const el = area.element as HTMLTextAreaElement
+    const enter = async () => {
+      el.setSelectionRange(el.value.length, el.value.length)
+      return area.trigger('keydown', { key: 'Enter' })
+    }
+
+    await area.setValue('- erster Punkt')
+    const continued = await enter()
+    expect(value.value).toBe('- erster Punkt\n- ')
+    expect(el.selectionStart).toBe(value.value.length)
+    expect(continued).toBeUndefined()
+
+    await enter()
+    expect(value.value).toBe('- erster Punkt\n')
+
+    // A plain line keeps the browser's own line break.
+    await area.setValue('Absatz')
+    await enter()
+    expect(value.value).toBe('Absatz')
+  })
 })

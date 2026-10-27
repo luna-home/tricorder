@@ -1,7 +1,4 @@
 {
-  "nav": {
-    "new": "New"
-  },
   "fields": {
     "project": "Project",
     "topic": "Topic",
@@ -23,7 +20,10 @@
     "finish": "Finish",
     "back": "Back",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "continue": "+ Status",
+    "pin": "Pin",
+    "unpin": "Unpin"
   },
   "open": {
     "kicker": "Logbook",
@@ -40,26 +40,28 @@
     "done": "Finished",
     "closed": "Topic finished",
     "notFound": "Topic not found",
-    "notFoundHint": "This project has no entries for this topic"
+    "notFoundHint": "This project has no entries for this topic",
+    "current": "Current status"
   },
   "form": {
     "kicker": "Logbook",
     "title": "New entry",
     "saving": "Saving",
     "failed": "Save failed",
-    "shortcut": "Cmd/Ctrl + Enter saves",
+    "shortcut": "“- ” at the start of a line makes a bullet, Cmd/Ctrl + Enter saves",
     "placeholders": {
       "project": "Project name",
       "topic": "What you are working on",
-      "status": "Where it stands",
-      "nextStep": "The next concrete step",
-      "openQuestions": "Questions, blockers",
+      "status": "- Where it stands",
+      "nextStep": "- The next concrete step",
+      "openQuestions": "- Questions, blockers",
       "refs": "Tickets, files, branches, URLs"
     },
     "errors": {
       "required": "Required",
       "invalid": "Invalid input"
-    }
+    },
+    "carried": "Prefilled with the last status: change only what moved"
   },
   "done": {
     "title": "Finish",
@@ -87,5 +89,10 @@
   "reasons": {
     "dbMissing": "Logbook database not found",
     "dbOpenFailed": "Cannot open the logbook database"
+  },
+  "pins": {
+    "label": "Pinned topics",
+    "full": "All {max} pins taken: unpin a topic first",
+    "key": "Cmd/Ctrl + {n}"
   }
 }

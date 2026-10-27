@@ -1,39 +1,39 @@
 /* Luna Console type scale (tokens.json, `type.groups`) as utility classes. These are the only
    font sizes app code may use; colour comes from the context (orange values, lavender labels,
-   cream secondary values). */
+   cream secondary values). Sizes follow the density (density.css). */
 
 .lc-type-readout {
-  font-size: 46px;
+  font-size: var(--type-readout);
   line-height: 1;
   font-weight: 600;
 }
 .lc-type-tile {
-  font-size: 30px;
+  font-size: var(--type-tile);
   line-height: 1;
   font-weight: 600;
 }
 .lc-type-button {
-  font-size: 24px;
+  font-size: var(--type-button);
   line-height: 1.2;
   font-weight: 600;
 }
 .lc-type-nav {
-  font-size: 22px;
+  font-size: var(--type-nav);
   line-height: 1.2;
   font-weight: 600;
 }
 .lc-type-label {
-  font-size: 22px;
+  font-size: var(--type-label);
   line-height: 1.2;
   font-weight: 400;
 }
 .lc-type-status {
-  font-size: 20px;
+  font-size: var(--type-status);
   line-height: 1.2;
   font-weight: 400;
 }
 .lc-type-code {
-  font-size: 16px;
+  font-size: var(--type-code);
   line-height: 1;
   font-weight: 600;
 }

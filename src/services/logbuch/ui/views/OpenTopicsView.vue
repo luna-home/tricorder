@@ -2,14 +2,16 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import LcChip from '@renderer/components/LcChip.vue'
 import LcTimestamp from '@renderer/components/LcTimestamp.vue'
 import QueryState from '@renderer/components/QueryState.vue'
-import { LcControlRow, LcOptionPill } from '@renderer/design/luna-console/vue'
 import { useService } from '@renderer/platform/useService'
 
 import EntryFields from '../components/EntryFields.vue'
 import PageHead from '../components/PageHead.vue'
+import PinRow from '../components/PinRow.vue'
 import { useLogbuchI18n } from '../i18n'
+import { pinColor } from '../pins'
 
 // WO WAR ICH: the newest entry of every open topic, newest first. The project filter lives in
 // the query (?project=), so going back keeps it.
@@ -31,7 +33,18 @@ const filterProjects = computed(() => {
     .map((item) => item.project)
   return project.value && !names.includes(project.value) ? [...names, project.value] : names
 })
-const entries = computed(() => topics.data.value ?? [])
+const pins = logbuch.query('pins')
+const pinOf = (project: string, topic: string) =>
+  (pins.data.value ?? []).find(
+    (pin) => pin.project === project && pin.topic.toLowerCase() === topic.toLowerCase(),
+  )?.position
+// Pinned topics first, by position (as `logbuch wo`), then the rest newest first.
+const entries = computed(() =>
+  (topics.data.value ?? [])
+    .map((entry) => ({ entry, pin: pinOf(entry.project, entry.topic) }))
+    .sort((a, b) => (a.pin ?? Infinity) - (b.pin ?? Infinity))
+    .map(({ entry, pin }) => ({ ...entry, pin })),
+)
 
 function select(name?: string) {
   void router.replace({ query: name ? { project: name } : {} })
@@ -43,28 +56,28 @@ function newEntry() {
 </script>
 
 <template>
-  <div class="logbuch-page">
+  <div class="logbuch-page" data-lc-density="log">
+    <PinRow />
     <PageHead :kicker="lt('open.kicker')" :title="lt('open.title')" :count="entries.length" />
 
-    <LcControlRow
-      :buttons="[{ id: 'new', label: lt('actions.new'), color: 'peach' }]"
-      @press="newEntry"
-    />
-
-    <div
-      v-if="filterProjects.length"
-      class="lc-options"
-      role="group"
-      :aria-label="lt('open.filter')"
-    >
-      <LcOptionPill :label="lt('open.all')" :selected="!project" @select="select()" />
-      <LcOptionPill
-        v-for="name in filterProjects"
-        :key="name"
-        :label="name"
-        :selected="name === project"
-        @select="select(name)"
-      />
+    <div class="lc-chips">
+      <LcChip :label="lt('actions.new')" color="peach" @click="newEntry" />
+      <div
+        v-if="filterProjects.length"
+        class="topic-filter lc-chips"
+        role="group"
+        :aria-label="lt('open.filter')"
+      >
+        <LcChip :label="lt('open.all')" color="inactive" :pressed="!project" @click="select()" />
+        <LcChip
+          v-for="name in filterProjects"
+          :key="name"
+          :label="name"
+          color="inactive"
+          :pressed="name === project"
+          @click="select(name)"
+        />
+      </div>
     </div>
 
     <QueryState
@@ -85,9 +98,20 @@ function newEntry() {
           >
             <span class="topic__spine" aria-hidden="true" />
             <span class="topic__body">
-              <span class="topic__project lc-type-label lc-text-lavender">{{ entry.project }}</span>
-              <span class="topic__name lc-type-button lc-text-orange">{{ entry.topic }}</span>
-              <LcTimestamp :value="entry.ts" />
+              <span class="topic__head">
+                <span
+                  v-if="entry.pin"
+                  class="topic__pin lc-type-code"
+                  :class="`lc-bg-${pinColor(entry.pin)}`"
+                  :title="lt('pins.key', { n: entry.pin })"
+                  >{{ entry.pin }}</span
+                >
+                <span class="topic__project lc-type-label lc-text-lavender">{{
+                  entry.project
+                }}</span>
+                <span class="topic__name lc-type-button lc-text-orange">{{ entry.topic }}</span>
+                <LcTimestamp :value="entry.ts" inline />
+              </span>
               <EntryFields :entry="entry" />
             </span>
           </RouterLink>
@@ -103,6 +127,10 @@ function newEntry() {
   flex-direction: column;
   gap: var(--space-5);
   min-width: 0;
+}
+/* The filter keeps a little distance from the command before it. */
+.topic-filter {
+  margin-left: var(--space-5);
 }
 .topic-list {
   display: flex;
@@ -136,6 +164,23 @@ function newEntry() {
   flex-direction: column;
   gap: var(--space-1-5);
   min-width: 0;
+}
+.topic__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+.topic__pin {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  align-self: center;
+  min-width: calc(2.5 * var(--type-code));
+  padding: var(--space-1) var(--space-2) 1px;
+  border-radius: var(--radius-pill);
+  color: var(--color-lcars-ink);
+  line-height: 1;
 }
 .topic__name {
   overflow-wrap: anywhere;

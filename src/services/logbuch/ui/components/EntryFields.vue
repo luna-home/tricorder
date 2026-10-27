@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import LcNoteText from '@renderer/components/LcNoteText.vue'
+
 import type { LogbuchEntry } from '../../contract'
 import { useLogbuchI18n } from '../i18n'
 
-// Stand / Weiter / Offen / Bezug of one entry: lavender labels, cream values in their own case.
-// On a `done` marker the status holds the closing note.
+// Stand / Weiter / Offen / Bezug of one entry, stacked like a protocol: a small lavender label
+// above a cream note with Spiegelstriche, so the text gets the full width. Weiter is indented by
+// one dash and starts under the text of Stand, as its sub-point. On a `done` marker the status
+// holds the closing note.
 const props = defineProps<{ entry: LogbuchEntry }>()
 const { lt } = useLogbuchI18n()
 
@@ -21,23 +25,38 @@ const fields = computed(() =>
 
 <template>
   <dl v-if="fields.length" class="entry-fields">
-    <template v-for="field in fields" :key="field.key">
-      <dt class="lc-type-label lc-text-lavender">{{ lt(`fields.${field.key}`) }}</dt>
-      <dd class="entry-fields__value lc-type-label lc-text-cream lc-verbatim">{{ field.value }}</dd>
-    </template>
+    <div
+      v-for="field in fields"
+      :key="field.key"
+      class="entry-fields__row"
+      :class="{ 'entry-fields__row--indent': field.key === 'nextStep' }"
+    >
+      <dt class="lc-type-code lc-text-lavender">{{ lt(`fields.${field.key}`) }}</dt>
+      <dd class="entry-fields__value lc-type-label lc-text-cream">
+        <LcNoteText :text="field.value" />
+      </dd>
+    </div>
   </dl>
 </template>
 
 <style scoped>
 .entry-fields {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: var(--space-1) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
   margin: 0;
+}
+.entry-fields__row {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* One dash plus its gap (see LcNoteText), so WEITER lines up with the text of Stand. */
+.entry-fields__row--indent {
+  margin-left: calc(var(--type-label) + var(--space-1-5));
 }
 .entry-fields__value {
   margin: 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  min-width: 0;
 }
 </style>

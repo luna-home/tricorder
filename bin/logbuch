@@ -38,7 +38,16 @@ CREATE TABLE IF NOT EXISTS entries (
     cwd TEXT
 );
 CREATE INDEX IF NOT EXISTS entries_topic ON entries (project, topic COLLATE NOCASE, ts);
+CREATE TABLE IF NOT EXISTS pins (
+    project TEXT NOT NULL,
+    topic TEXT NOT NULL COLLATE NOCASE,
+    position INTEGER NOT NULL UNIQUE,    -- 1..4, Cmd/Ctrl+position in the app
+    ts TEXT NOT NULL,
+    PRIMARY KEY (project, topic)
+);
 """
+# At most this many topics are pinned at once (keys 1-4 in the app).
+MAX_PINS = 4
 
 
 # --- storage ---------------------------------------------------------------
@@ -69,24 +78,62 @@ def add_entry(project, topic, *, kind="entry", status=None, next_step=None,
             (now().isoformat(timespec="seconds"), project, topic, kind, status,
              next_step, open_questions, refs, source, session_id, cwd),
         )
+        # A finished topic gives up its pin; the other pins keep their keys.
+        if kind == "done":
+            con.execute("DELETE FROM pins WHERE project = ? AND topic = ?", (project, topic))
     return topic
 
 
 def open_topics(project=None, limit=None):
-    """Latest entry per topic whose latest entry is not a 'done' marker, newest first."""
+    """Latest entry per topic whose latest entry is not a 'done' marker: pinned topics first
+    (by position, column `pin`), then the rest newest first."""
     sql = """
-        SELECT e.* FROM entries e
+        SELECT e.*, p.position AS pin FROM entries e
         JOIN (SELECT project, topic COLLATE NOCASE AS t, MAX(id) AS max_id
               FROM entries GROUP BY project, topic COLLATE NOCASE) last
           ON e.id = last.max_id
+        LEFT JOIN pins p ON p.project = e.project AND p.topic = e.topic
         WHERE e.kind != 'done' {where}
-        ORDER BY e.id DESC {limit}
+        ORDER BY p.position IS NULL, p.position, e.id DESC {limit}
     """.format(
         where="AND e.project = ?" if project else "",
         limit=f"LIMIT {int(limit)}" if limit else "",
     )
     with connect() as con:
         return con.execute(sql, (project,) if project else ()).fetchall()
+
+
+def pins():
+    with connect() as con:
+        return con.execute("SELECT * FROM pins ORDER BY position").fetchall()
+
+
+def pin_topic(project, topic):
+    """Pins an open topic on the lowest free position. Returns (position, newly_pinned);
+    exits with a message when the topic is finished or all positions are taken."""
+    with connect() as con:
+        known = con.execute("SELECT position FROM pins WHERE project = ? AND topic = ?",
+                            (project, topic)).fetchone()
+        if known:
+            return known["position"], False
+        last = con.execute("SELECT kind FROM entries WHERE project = ? AND topic = ? COLLATE NOCASE"
+                           " ORDER BY id DESC LIMIT 1", (project, topic)).fetchone()
+        if not last or last["kind"] == "done":
+            sys.exit(f"„{topic}“ ist abgeschlossen. Anheften geht nur bei offenen Themen.")
+        taken = con.execute("SELECT * FROM pins ORDER BY position").fetchall()
+        free = [n for n in range(1, MAX_PINS + 1) if n not in {r["position"] for r in taken}]
+        if not free:
+            names = ", ".join(f"[{r['position']}] {r['project']}/{r['topic']}" for r in taken)
+            sys.exit(f"Alle {MAX_PINS} Plätze belegt: {names}. Erst eines mit `logbuch loesen` lösen.")
+        con.execute("INSERT INTO pins (project, topic, position, ts) VALUES (?,?,?,?)",
+                    (project, topic, free[0], now().isoformat(timespec="seconds")))
+        return free[0], True
+
+
+def unpin_topic(project, topic):
+    with connect() as con:
+        return con.execute("DELETE FROM pins WHERE project = ? AND topic = ?",
+                           (project, topic)).rowcount > 0
 
 
 def history(project, topic, limit):
@@ -162,15 +209,24 @@ def stamp(row):
     return f"{clock(dt)} · {ago(dt)} · Sternzeit {stardate(dt)}"
 
 
+def label_block(head, text):
+    """`head` before the first line; later lines (Spiegelstriche) are indented under it."""
+    first, *rest = text.strip("\n").splitlines() or [""]
+    pad = " " * len(head)
+    return "\n".join([head + first, *(pad + line for line in rest)])
+
+
 def format_entry(row, with_topic=True):
-    head = f"■ {row['project']} / {row['topic']}" if with_topic else "■"
+    pin = row["pin"] if "pin" in row.keys() else None
+    mark = f"■ [{pin}]" if pin else "■"
+    head = f"{mark} {row['project']} / {row['topic']}" if with_topic else mark
     lines = [f"{head}  ({stamp(row)}, {row['source']})"]
     if row["kind"] == "done":
         lines.append("  ✓ abgeschlossen")
     for label, key in (("Stand", "status"), ("Weiter", "next_step"),
                        ("Offen", "open_questions"), ("Bezug", "refs")):
         if row[key]:
-            lines.append(f"  {label}: {row[key]}")
+            lines.append(label_block(f"  {label}: ", row[key]))
     return "\n".join(lines)
 
 
@@ -219,6 +275,21 @@ def cmd_fertig(args):
     print(f"Abgeschlossen: {project} / {topic}")
 
 
+def cmd_anheften(args):
+    project, topic = resolve_topic(args.thema, args.projekt)
+    position, new = pin_topic(project, topic)
+    verb = "Angeheftet" if new else "Schon angeheftet"
+    print(f"{verb}: [{position}] {project} / {topic} · im Tricorder Cmd/Strg+{position}")
+
+
+def cmd_loesen(args):
+    project, topic = resolve_topic(args.thema, args.projekt)
+    if unpin_topic(project, topic):
+        print(f"Gelöst: {project} / {topic}")
+    else:
+        print(f"Nicht angeheftet: {project} / {topic}")
+
+
 # --- hooks -------------------------------------------------------------------
 
 def log(msg):
@@ -239,9 +310,11 @@ def hook_session_start(data):
     lines = [
         "logbuch: Arbeitsprotokoll des Users, damit er nach Unterbrechungen den Faden findet.",
         "Einträge nur schreiben, wenn der Stop-Hook oder der User es verlangt, nicht von dir aus.",
-        "Eintrag schreiben: logbuch merk \"<Thema>\" \"<Stand>\" --weiter \"<nächster Schritt>\""
-        " [--offen \"…\"] [--bezug \"<Ticket/Datei>\"] --von claude. Passt ein bestehendes Thema,"
-        " dessen Namen exakt wiederverwenden. Thema erledigt: logbuch fertig \"<Thema>\" --von claude.",
+        "Eintrag schreiben: logbuch merk \"<Thema>\" $'- <Stand>\\n- <Stand>' --weiter $'- <Schritt>'"
+        " [--offen $'- …'] [--bezug \"<Ticket/Datei>\"] --von claude. Stand, Weiter und Offen als"
+        " Spiegelstriche: eine Zeile je Punkt, \"- \" am Anfang, gern detailliert. Passt ein"
+        " bestehendes Thema, dessen Namen exakt wiederverwenden. Thema erledigt:"
+        " logbuch fertig \"<Thema>\" --von claude.",
     ]
     if rows:
         lines.append(f"Offene Themen in {project} (neueste zuerst):")
@@ -311,12 +384,14 @@ relevant=false if:
 - it was only a quick question, small talk or a trivial one-off edit, or
 - that state is already recorded by a `logbuch merk` call in the conversation.
 
-If relevant=true, fill the fields in German, short and concrete:
+If relevant=true, fill the fields in German, concrete and detailed enough to pick up the \
+work without the conversation. Write status, next_step and open_questions as Spiegelstriche: \
+one fact per line, every line starting with "- ", separated by newlines.
 - topic: the work topic. Reuse one of these existing topic names exactly if it fits: {topics}
-- status: where the work stands right now (1-2 sentences)
-- next_step: the concrete next action
-- open_questions: open questions or blockers, empty if none
-- refs: tickets, files, branches, URLs, empty if none
+- status: where the work stands right now: results, decisions, changed files (2-6 lines)
+- next_step: the concrete next actions, in order (1-3 lines)
+- open_questions: open questions or blockers (lines as above), empty if none
+- refs: tickets, files, branches, URLs, one per line, empty if none
 """
 
 
@@ -424,6 +499,16 @@ def main(argv=None):
     s.add_argument("--projekt")
     s.add_argument("--von", default="manual", choices=["manual", "claude"])
     s.set_defaults(func=cmd_fertig)
+
+    s = sub.add_parser("anheften", help=f"Thema anheften (höchstens {MAX_PINS}, steht in `wo` oben)")
+    s.add_argument("thema")
+    s.add_argument("--projekt")
+    s.set_defaults(func=cmd_anheften)
+
+    s = sub.add_parser("loesen", help="angeheftetes Thema lösen")
+    s.add_argument("thema")
+    s.add_argument("--projekt")
+    s.set_defaults(func=cmd_loesen)
 
     s = sub.add_parser("hook", help="Einstieg für Claude-Code-Hooks")
     s.add_argument("event", choices=sorted(HOOKS))

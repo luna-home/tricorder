@@ -5,7 +5,8 @@ Luna-Desktop-Client in Electron (macOS und Windows). Eine Plattform für fest ei
 Hintergrunddienste, die im Tray weiterlaufen. Der verbindliche Plan steht in `docs/plan.md`.
 
 Daneben liegt das Python-CLI `bin/logbuch` (SQLite, befüllt von den Claude-Code-Hooks in
-`hooks/`, Tests in `tests/`). Es ist die **Quelle der Wahrheit** für die logbuch-Semantik.
+`hooks/`, Tests in `tests/`). Tabellen `entries` und `pins` (höchstens 4 angeheftete Themen,
+`logbuch anheften` / `loesen`, `fertig` löst den Pin); Freitext mit Spiegelstrichen (`- `). Es ist die **Quelle der Wahrheit** für die logbuch-Semantik.
 `~/bin/logbuch` ist ein Symlink auf `bin/logbuch`: die Datei nie verschieben oder umbenennen.
 
 ## Stack
@@ -191,13 +192,13 @@ und `contract.ts`.
    - `export default` eines `RouteRecordRaw[]`: Pfade relativ und ohne führenden Slash (`''` ist
      die Startseite des Dienstes, Name `<id>`), weitere Namen beginnen mit `<id>.`; der Renderer
      hängt sie unter `/<id>` ein. Views laden lazy (`() => import('./views/X.vue')`).
-   - `meta: { navKey, navColor }` an einer Route: sie erscheint als Rail-Button, solange der
-     Dienst offen ist (logbuch: NEU).
    - optional `export const alerts = { unconfigured: Komponente }`: ersetzt für diesen Zustand
      den allgemeinen Hinweis des Rahmens; die Komponente bekommt die Prop `status`.
    - Texte der UI in `ui/locales/{de,en}.json`; sie werden mit `locales/` unter
      `services.<id>.*` zusammengeführt.
    Ohne `ui/routes.ts` bekommt der Dienst keinen Rail-Button, seine Startkachel ist deaktiviert.
+   Die Rail ist fest: START und je Dienst ein Button, sonst nichts. Unterseiten und Befehle eines
+   Dienstes (z. B. NEUER EINTRAG) stehen als Befehlsreihe auf seinen Seiten, nie in der Rail.
 4. Live-Updates: im Main-Teil `ctx.emit('<event>')` aufrufen; der Renderer lädt dann alle
    Abfragen des Dienstes neu.
 5. Tests: Main-Teil und Vertrag in `src/services/<id>/__tests__/` (Node), UI-Tests unter
@@ -256,6 +257,18 @@ verbindlich:
   Taps (armed -> bestätigen).
 - Texte: kurze Substantive/Verben in Großbuchstaben, Befehlscodes `NN-XXX`, Alarme nennen
   Ursache und Abhilfe.
+- Zwei Dichten: `touch` (Originalmaße) und `desk` (~0,7, automatisch bei `pointer: fine`);
+  `data-lc-density="touch|desk"` an `<html>` oder einem Container erzwingt eine. Größen nur
+  über die Variablen (`--type-*`, Layout-/Radius-/Abstands-Tokens, `--density-scale` für
+  Ausrichtungsabstände ohne eigenes Token), nie als Literal. Prototyp in
+  `src/renderer/assets/density.css`, bis er upstream ist (`docs/plan-dichte-desk.md`).
+  Dazu `data-lc-density="log"`: dichte Stufe nur für einen Inhaltscontainer (Text wie ein
+  Protokoll), nie für den Rahmen; alle logbuch-Seiten nutzen sie.
+- Befehle und Filter auf einer Dienstseite sind `LcChip`s in einer `.lc-chips`-Reihe: so breit
+  wie der Text (höchstens 16em), dann Ellipse; nur ein gekürzter Text bekommt den vollen Text als
+  Tooltip. Keine Control-Rows über die volle Breite für einzelne Befehle.
+- Freitext mit Spiegelstrichen (`- ` am Zeilenanfang) zeigt `LcNoteText` an
+  (`src/renderer/components/note.ts`); `LcFieldArea` setzt sie per Enter fort.
 - Keine festen Bildschirmgrößen. Der Rahmen füllt seinen Container (`#app { height: 100dvh }`);
   Layouts passen sich über intrinsische Grids oder Container Queries an.
 - Erst vorhandene `Lc*`-Komponenten / `.lc-*`-Klassen nutzen. Neue Komponenten (z. B. `LcField`)

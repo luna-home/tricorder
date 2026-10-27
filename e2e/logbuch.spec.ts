@@ -4,7 +4,9 @@ import { expect, test, type Page } from '@playwright/test'
 
 import { launchApp, logbuchCli } from './app'
 
-const openTopics = (page: Page) => page.getByRole('list', { name: 'Offene Themen' }).locator('li')
+// Direct children only: a topic's Spiegelstriche are list items too.
+const openTopics = (page: Page) =>
+  page.getByRole('list', { name: 'Offene Themen' }).locator(':scope > li')
 const heading = (page: Page) => page.locator('.page-head__title')
 
 test('logbuch: open topics, new entry, live CLI entry, two-tap done', async () => {
@@ -39,15 +41,24 @@ test('logbuch: open topics, new entry, live CLI entry, two-tap done', async () =
     await page.getByLabel('Projekt').fill('luna')
     await page.getByLabel('Thema').fill('E2E Thema')
     await page.getByLabel('Stand').fill('Aus der App eingetragen')
-    await page.getByLabel('Weiter').fill('Abschließen testen')
+    await page.getByLabel('Weiter').fill('- Abschließen testen')
+    await page.getByLabel('Weiter').press('Enter')
+    await page.getByLabel('Weiter').pressSequentially('Pins testen')
     await page.getByRole('button', { name: 'Speichern' }).click()
     await expect(heading(page)).toHaveText('E2E Thema')
-    await expect(page.getByRole('list', { name: 'Einträge' })).toContainText(
+    await expect(page.getByRole('region', { name: 'Aktueller Stand' })).toContainText(
       'Aus der App eingetragen',
     )
     expect(logbuchCli(dbPath, 'zeig', 'E2E Thema', '--projekt', 'luna')).toContain(
-      'Aus der App eingetragen',
+      'Weiter: - Abschließen testen\n          - Pins testen',
     )
+
+    // + STAND continues the topic with its newest entry.
+    await page.getByRole('button', { name: '+ Stand' }).click()
+    await expect(heading(page)).toHaveText('E2E Thema')
+    await expect(page.getByLabel('Stand')).toHaveValue('Aus der App eingetragen')
+    await page.getByRole('button', { name: 'Abbrechen' }).click()
+    await expect(heading(page)).toHaveText('E2E Thema')
 
     // Back in WO WAR ICH the new topic is on top.
     await page.getByRole('button', { name: 'Zurück' }).click()
@@ -97,6 +108,33 @@ test('logbuch: a missing database gives a yellow alert and is not created', asyn
     await expect(notice).toContainText('LOGBUCH_DB')
     await expect(page.locator('.setup-notice__path')).toContainText(dbPath)
     expect(existsSync(dbPath)).toBe(false)
+  } finally {
+    await close()
+  }
+})
+
+test('logbuch: pins from CLI and app share the slots, Cmd/Ctrl+n jumps', async () => {
+  const { app, dbPath, close } = await launchApp({
+    seed: (db) => {
+      logbuchCli(db, 'merk', 'Erstes', '- a', '--projekt', 'luna')
+      logbuchCli(db, 'merk', 'Zweites', '- b', '--projekt', 'home')
+      logbuchCli(db, 'anheften', 'Erstes', '--projekt', 'luna')
+    },
+  })
+  try {
+    const page = await app.firstWindow()
+    const pins = page.getByRole('navigation', { name: 'Angeheftete Themen' })
+    await page.locator('.lc-tile', { hasText: 'Logbuch' }).click()
+    await expect(pins.getByRole('button')).toHaveText(['1 Erstes'])
+
+    await openTopics(page).filter({ hasText: 'Zweites' }).locator('a').click()
+    await expect(heading(page)).toHaveText('Zweites')
+    await page.getByRole('button', { name: 'Anheften' }).click()
+    await expect(pins.getByRole('button')).toHaveText(['1 Erstes', '2 Zweites'])
+    expect(logbuchCli(dbPath, 'wo')).toContain('■ [2] home / Zweites')
+
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+1' : 'Control+1')
+    await expect(heading(page)).toHaveText('Erstes')
   } finally {
     await close()
   }

@@ -55,6 +55,37 @@ class LogbuchTest(unittest.TestCase):
             out = self.run_cli("merk", "T", "x", "--projekt", "p")
         self.assertEqual(out.strip(), "Eingetragen: p / T · Do 22.10. 09:15 (Sternzeit 2026.806)")
 
+    def test_multiline_values_are_indented_under_their_label(self):
+        self.run_cli("merk", "T", "- eins\n- zwei", "--weiter", "- los", "--projekt", "p")
+        out = self.run_cli("wo", "--projekt", "p")
+        self.assertIn("  Stand: - eins\n         - zwei\n  Weiter: - los", out)
+
+    def test_session_start_asks_for_spiegelstriche(self):
+        data = {"session_id": "s1", "source": "startup", "cwd": self.tmp.name}
+        with mock.patch.object(self.lb, "current_project", return_value="proj"), \
+                mock.patch("sys.stdin", io.StringIO(json.dumps(data))):
+            out = self.run_cli("hook", "session-start")
+        self.assertIn("Spiegelstriche", out)
+        self.assertIn("$'- <Stand>\\n- <Stand>'", out)
+
+    def test_pins_list_first_and_are_released_by_fertig(self):
+        for t in ("A", "B", "C", "D", "E"):
+            self.run_cli("merk", t, t, "--projekt", "p")
+        for t in ("C", "a", "B", "D"):
+            self.run_cli("anheften", t, "--projekt", "p")
+        with self.assertRaises(SystemExit) as full:
+            self.run_cli("anheften", "E", "--projekt", "p")
+        self.assertIn("Alle 4 Plätze belegt", str(full.exception))
+        heads = [l for l in self.run_cli("wo", "--projekt", "p").splitlines() if l.startswith("■")]
+        self.assertEqual([h.split("  (")[0] for h in heads],
+                         ["■ [1] p / C", "■ [2] p / A", "■ [3] p / B", "■ [4] p / D", "■ p / E"])
+        self.run_cli("fertig", "A", "--projekt", "p")
+        self.assertIn("Angeheftet: [2] p / E", self.run_cli("anheften", "E", "--projekt", "p"))
+        with self.assertRaises(SystemExit) as closed:
+            self.run_cli("anheften", "A", "--projekt", "p")
+        self.assertIn("abgeschlossen", str(closed.exception))
+        self.assertIn("Gelöst: p / E", self.run_cli("loesen", "E", "--projekt", "p"))
+
     def test_case_variants_stay_one_topic(self):
         self.run_cli("merk", "Port-Scanner", "eins", "--projekt", "p")
         out = self.run_cli("merk", "port-scanner", "zwei", "--projekt", "p")

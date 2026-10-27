@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Logbuch Mockup</title>
+    <!-- Mockup zu docs/plan-logbuch-gedaechtnis.md. Nutzt das echte Luna-Console-CSS der App
+         (inkl. Dichte desk), damit Größen und Formen stimmen. Lokal im Browser öffnen. -->
+    <link rel="stylesheet" href="../../node_modules/@fontsource/antonio/400.css" />
+    <link rel="stylesheet" href="../../node_modules/@fontsource/antonio/600.css" />
+    <link rel="stylesheet" href="../../src/renderer/design/luna-console/tokens.css" />
+    <link rel="stylesheet" href="../../src/renderer/design/luna-console/components.css" />
+    <link rel="stylesheet" href="../../src/renderer/assets/type.css" />
+    <link rel="stylesheet" href="../../src/renderer/assets/density.css" />
+    <link rel="stylesheet" href="../../src/renderer/components/field.css" />
+    <style>
+      html, body { margin: 0; height: 100%; background: var(--color-lcars-ground); }
+      #app { height: 100dvh; }
+      p, h2, ul, ol, dl, dd { margin: 0; }
+
+      /* Protokoll: the content gets its own, denser size step; the frame stays desk. Only the
+         size variables change, so every component follows. */
+      .lc-panel__content {
+        --type-readout: 20px;
+        --type-tile: 15px;
+        --type-button: 14px;
+        --type-nav: 13px;
+        --type-label: 14px;
+        --type-status: 13px;
+        --type-code: 11px;
+        --space-2-5: 6px;
+        --space-3: 6px;
+        --space-4-5: 10px;
+        --space-5: 10px;
+        --space-8: 16px;
+        --control-height: 26px;
+        --option-height: 28px;
+        --tile-height: 52px;
+        --radius-pill: 13px;
+        --radius-option: 14px;
+        --radius-tile: 16px;
+        --density-scale: 0.5;
+      }
+      .lc-panel__content .lc-row { max-width: 640px; }
+      .note, .note ul { line-height: 1.3; }
+      .note, .note ul, .note li { gap: 0; }
+      /* Fixed label column, so an indented block (Weiter) starts exactly under the dashes of Stand. */
+      .lc-panel__content { --field-label: 44px; }
+      .fields { grid-template-columns: var(--field-label) minmax(0, 1fr); gap: var(--space-1) var(--space-3); }
+      .fields--indent { margin-left: calc(var(--field-label) + var(--space-3)); }
+      .field-stack { display: flex; flex-direction: column; gap: var(--space-2); }
+      .fields dt { font-size: var(--type-code); line-height: calc(var(--type-label) * 1.3); }
+      .page-head__text { gap: 0; }
+
+      [data-view] { display: none; }
+      [data-view].is-active { display: flex; }
+
+      .page { flex-direction: column; gap: var(--space-5); min-width: 0; }
+      .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-5); }
+      .page-head__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+      .section-label { display: flex; align-items: baseline; gap: var(--space-3); }
+
+      /* Rail: the pins sit below the service buttons, a gap apart. */
+      .rail-gap { height: var(--space-5); }
+
+      /* Note text with Spiegelstriche: lavender dash, hanging indent, cream text in its own case. */
+      .note { display: flex; flex-direction: column; gap: var(--space-1); }
+      .note ul { display: flex; flex-direction: column; gap: var(--space-1); padding: 0; list-style: none; }
+      .note li { display: grid; grid-template-columns: 1em minmax(0, 1fr); column-gap: var(--space-2); }
+      .note li::before { content: '–'; color: var(--color-lcars-lavender); }
+
+      .fields { display: grid; }
+
+      /* Topic block: spine left, body right (as OpenTopicsView / HistoryView). */
+      .topics { display: flex; flex-direction: column; gap: var(--space-8); padding: 0; list-style: none; }
+      .topic { display: grid; grid-template-columns: var(--space-3) minmax(0, 1fr); column-gap: var(--space-5); cursor: pointer; }
+      .topic:hover .topic__name { text-decoration: underline; text-decoration-thickness: 2px; }
+      .topic__spine { border-radius: var(--radius-segment); background: var(--color-lcars-inactive); }
+      .topic__body { display: flex; flex-direction: column; gap: var(--space-1-5); min-width: 0; }
+      .topic__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-3); }
+      .pin-badge { display: inline-flex; align-items: flex-end; justify-content: flex-end; min-width: calc(2.2 * var(--type-code)); padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill); color: var(--color-lcars-ink); }
+      .clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+
+      .cols2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-5) var(--space-8); }
+
+      .current { display: grid; grid-template-columns: var(--space-3) minmax(0, 1fr); column-gap: var(--space-5); }
+      .current__spine { border-radius: var(--radius-segment); }
+      .current__body { display: flex; flex-direction: column; gap: var(--space-5); min-width: 0; }
+
+      .history { display: flex; flex-direction: column; gap: var(--space-3); padding: 0; list-style: none; }
+      .history li { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-5); align-items: baseline; }
+
+      .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(280px * var(--density-scale))), 1fr)); gap: var(--space-5) var(--space-8); }
+      .form-col { display: flex; flex-direction: column; gap: var(--space-5); }
+      textarea.lc-field__control { min-height: calc(3 * var(--option-height)); line-height: 1.35; }
+      .toast { position: fixed; right: var(--space-5); bottom: var(--space-5); padding: var(--space-2) var(--space-5); border-radius: var(--radius-pill); background: var(--color-lcars-online); color: var(--color-lcars-ink); font-family: var(--font-lcars); font-weight: 600; text-transform: uppercase; opacity: 0; transition: opacity 0.2s; }
+      .toast.is-on { opacity: 1; }
+      kbd { font-family: inherit; color: var(--color-lcars-orange); }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <main class="lc-surface lc-panel">
+        <div class="lc-elbow lc-pulse lc-elbow--down lc-bg-lavender lc-panel__upper"></div>
+        <div class="lc-bar lc-panel__upper-bar">
+          <div class="lc-bg-orange" style="width: 44px"></div>
+          <div class="lc-bg-mauve" style="width: 300px"></div>
+          <div class="lc-bg-lavender lc-bar__fill"></div>
+          <div class="lc-bg-orange" style="width: 70px"></div>
+        </div>
+        <div class="lc-elbow lc-pulse lc-elbow--up lc-bg-red lc-panel__lower"></div>
+        <div class="lc-bar lc-panel__lower-bar">
+          <div class="lc-bg-red" style="width: 180px"></div>
+          <div class="lc-bg-peach" style="width: 44px"></div>
+          <div class="lc-bg-mauve lc-bar__fill"></div>
+          <div class="lc-bg-red" style="width: 120px"></div>
+        </div>
+
+        <div class="lc-panel__header">
+          <div class="lc-panel__clock" id="clock">00:00</div>
+          <div class="lc-panel__meta">
+            <span class="lc-panel__date" id="date"></span>
+            <span class="lc-status" data-state="online">MOCKUP</span>
+          </div>
+        </div>
+        <div class="lc-panel__title">TRICORDER</div>
+
+        <nav class="lc-rail lc-panel__rail" id="rail">
+          <button type="button" class="lc-nav lc-bg-mauve" data-go="start">START</button>
+          <button type="button" class="lc-nav lc-bg-orange" data-go="wo">LOGBUCH</button>
+          <button type="button" class="lc-nav lc-bg-peach" data-go="neu">NEU</button>
+          <div class="rail-gap" aria-hidden="true"></div>
+          <button type="button" class="lc-nav lc-bg-orange" data-go="t1" title="Cmd/Strg+1">1 TRICORDER</button>
+          <button type="button" class="lc-nav lc-bg-lavender" data-go="t2" title="Cmd/Strg+2">2 BACKUP</button>
+          <button type="button" class="lc-nav lc-bg-mauve" data-go="t3" title="Cmd/Strg+3">3 DESIGN</button>
+        </nav>
+
+        <div class="lc-panel__content">
+          <!-- START -->
+          <section class="page" data-view="start">
+            <div class="section-label">
+              <span class="lc-type-label lc-text-lavender">ANGEHEFTET</span>
+              <span class="lc-type-status lc-text-cream"><kbd>CMD/STRG + 1–4</kbd> SPRINGT DIREKT ZUM THEMA</span>
+            </div>
+            <div class="lc-tiles">
+              <button type="button" class="lc-tile lc-bg-orange lc-tile--tl" data-go="t1"><span class="lc-tile__code">01-PIN</span>TRICORDER ELECTRON</button>
+              <button type="button" class="lc-tile lc-bg-lavender" data-go="t2"><span class="lc-tile__code">02-PIN</span>BACKUP NEXTCLOUD</button>
+              <button type="button" class="lc-tile lc-bg-mauve lc-tile--tr" data-go="t3"><span class="lc-tile__code">03-PIN</span>LUNA DESIGN SYSTEM</button>
+            </div>
+            <span class="lc-type-label lc-text-lavender">DIENSTE</span>
+            <div class="lc-tiles">
+              <button type="button" class="lc-tile lc-bg-orange lc-tile--bl" data-go="wo"><span class="lc-tile__code">01-LOG</span>LOGBUCH</button>
+            </div>
+          </section>
+
+          <!-- WO WAR ICH -->
+          <section class="page" data-view="wo">
+            <header class="page-head">
+              <div class="page-head__text">
+                <span class="lc-type-label lc-text-lavender">LOGBUCH</span>
+                <h2 class="lc-type-readout lc-text-orange">WO WAR ICH</h2>
+              </div>
+              <span class="lc-type-readout lc-text-orange lc-tabular">005</span>
+            </header>
+            <div class="lc-row"><button type="button" class="lc-btn lc-btn--pill lc-bg-peach" data-go="neu-leer">NEUER EINTRAG</button></div>
+
+            <span class="lc-type-label lc-text-lavender">ANGEHEFTET</span>
+            <ol class="topics" id="pinned-list"></ol>
+
+            <span class="lc-type-label lc-text-lavender">WEITERE OFFENE THEMEN</span>
+            <ol class="topics" id="other-list"></ol>
+          </section>
+
+          <!-- THEMENSEITEN -->
+          <section class="page" data-view="t1"></section>
+          <section class="page" data-view="t2"></section>
+          <section class="page" data-view="t3"></section>
+
+          <!-- + STAND / NEU -->
+          <section class="page" data-view="neu">
+            <header class="page-head">
+              <div class="page-head__text">
+                <span class="lc-type-label lc-text-lavender" id="form-kicker">LUNA · FORTSCHREIBEN</span>
+                <h2 class="lc-type-readout lc-text-orange" id="form-title">TRICORDER ELECTRON</h2>
+              </div>
+            </header>
+            <p class="lc-type-status lc-text-cream" id="form-hint">VORBELEGT MIT DEM LETZTEN STAND. ÄNDERE NUR, WAS SICH BEWEGT HAT. <kbd>ENTER</kbd> IN EINER „- “-ZEILE SETZT DEN NÄCHSTEN STRICH, <kbd>CMD/STRG + ENTER</kbd> SPEICHERT.</p>
+            <div class="form-grid">
+              <div class="form-col">
+                <div class="lc-field">
+                  <label class="lc-field__label lc-type-label" for="f-status">STAND <span class="lc-field__required lc-type-code">PFLICHT</span></label>
+                  <textarea id="f-status" class="lc-field__control lc-type-label" rows="5"></textarea>
+                </div>
+                <div class="lc-field">
+                  <label class="lc-field__label lc-type-label" for="f-next">WEITER</label>
+                  <textarea id="f-next" class="lc-field__control lc-type-label" rows="4"></textarea>
+                </div>
+              </div>
+              <div class="form-col">
+                <div class="lc-field">
+                  <label class="lc-field__label lc-type-label" for="f-open">OFFEN</label>
+                  <textarea id="f-open" class="lc-field__control lc-type-label" rows="4"></textarea>
+                </div>
+                <div class="lc-field">
+                  <label class="lc-field__label lc-type-label" for="f-refs">BEZUG</label>
+                  <textarea id="f-refs" class="lc-field__control lc-type-label" rows="3"></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="lc-row">
+              <button type="button" class="lc-btn lc-btn--cap-left lc-bg-orange" id="save">SPEICHERN</button>
+              <button type="button" class="lc-btn lc-btn--cap-right lc-bg-lavender" id="cancel">ABBRECHEN</button>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <div class="toast" id="toast">GESPEICHERT (MOCKUP)</div>
+
+    <script>
+      const topics = {
+        t1: {
+          pin: 1, color: 'orange', project: 'luna', topic: 'Tricorder Electron', ts: 'FR 23.10.2026 · 14:12', ago: 'VOR 3 MIN', star: 'STERNZEIT 2026.810', source: 'MANUELL',
+          status: '- Dichte „desk“ als Prototyp in density.css umgesetzt\n- type-check, lint, 196 Unit- und 5 e2e-Tests grün\n- Screenshots 1280 / 1000 / 600 geprüft\n- Plan „Logbuch als Gedächtnisstütze“ geschrieben',
+          next: '- Werte mit Patrick abstimmen: Label 16 oder 17 px?\n- Phase A: Spiegelstriche in EntryFields und LcFieldArea',
+          open: '- Sitzen die macOS-Ampeln noch auf dem oberen Elbow?',
+          refs: 'docs/plan-dichte-desk.md\ndocs/plan-logbuch-gedaechtnis.md\nBranch feat/electron-client',
+          history: [
+            ['DO 22.10.2026 · 18:40', 'Gerüst steht: Electron 45, Vue 3, Dienst logbuch online'],
+            ['DO 22.10.2026 · 11:05', 'node:sqlite statt better-sqlite3 geprüft, läuft in Electron'],
+            ['MI 21.10.2026 · 16:20', 'Plan in docs/plan.md abgestimmt'],
+          ],
+        },
+        t2: {
+          pin: 2, color: 'lavender', project: 'home', topic: 'Backup Nextcloud', ts: 'FR 23.10.2026 · 09:30', ago: 'VOR 5 STD', star: 'STERNZEIT 2026.809', source: 'CLAUDE',
+          status: '- Restore auf venus getestet, Dauer 14 Min\n- Retention auf 14 Tage gesetzt',
+          next: '- Cron-Job auf jupiter prüfen: läuft er um 03:00?\n- Restore-Test als Fall in luna-exp ablegen',
+          open: '- Platz auf earth reicht nur noch für ~3 Wochen',
+          refs: 'bin/luna-backup\n/var/log/luna-backup.log',
+          history: [['MI 21.10.2026 · 20:15', 'Backup läuft wieder, Volume war voll']],
+        },
+        t3: {
+          pin: 3, color: 'mauve', project: 'luna', topic: 'Luna Design System', ts: 'FR 23.10.2026 · 14:05', ago: 'VOR 10 MIN', star: 'STERNZEIT 2026.810', source: 'SESSION-END',
+          status: '- Phase 1 der Dichte läuft in Tricorder\n- Werte: Faktor ~0,7, Klickziele ≥ 34 px',
+          next: '- tokens.json v2 mit density touch / desk\n- Showcase: Umschalter touch / desk',
+          open: '',
+          refs: '~/workspace/luna/luna-design-system',
+          history: [['MI 21.10.2026 · 12:00', 'Showcase auf docs.kuckelsberg.de deployt']],
+        },
+      }
+      const others = [
+        { project: 'luna', topic: 'Hey Luna Wakeword', ts: 'MI 21.10.2026 · 21:10', ago: 'VOR 2 TAGEN', status: '- Whisper erkennt „Hey Luna“ nur bei ruhigem Raum', next: '- Schwelle in der Pipeline von 0,5 auf 0,4 senken' },
+        { project: 'home', topic: 'Mealie Update', ts: 'DI 20.10.2026 · 19:02', ago: 'VOR 3 TAGEN', status: '- Version 2.4 bereitgestellt, Migration offen', next: '- Backup ziehen, dann Migration starten' },
+      ]
+
+      const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+      // Text with Spiegelstriche: "- " lines become list items, other lines paragraphs.
+      function note(text) {
+        const out = []
+        let list = null
+        for (const line of text.split('\n')) {
+          const m = /^\s*[-*•]\s+(.*)$/.exec(line)
+          if (m) {
+            if (!list) { list = []; out.push(list) }
+            list.push(m[1])
+          } else if (line.trim()) {
+            list = null
+            out.push(line)
+          }
+        }
+        return '<div class="note lc-type-label lc-text-cream lc-verbatim">' +
+          out.map((b) => (Array.isArray(b) ? '<ul>' + b.map((i) => `<li>${esc(i)}</li>`).join('') + '</ul>' : `<p>${esc(b)}</p>`)).join('') +
+          '</div>'
+      }
+      // One block per field, stacked; Weiter is indented under Stand.
+      function fields(t, keys) {
+        const labels = { status: 'STAND', next: 'WEITER', open: 'OFFEN', refs: 'BEZUG' }
+        return '<div class="field-stack">' + keys.filter((k) => t[k]).map((k) =>
+          `<dl class="fields${k === 'next' ? ' fields--indent' : ''}"><dt class="lc-type-label lc-text-lavender">${labels[k]}</dt><dd>${note(t[k])}</dd></dl>`).join('') + '</div>'
+      }
+      function stamp(t) {
+        return `<div class="topic__head"><span class="lc-type-button lc-text-orange lc-tabular">${t.ts}</span><span class="lc-type-label lc-text-cream">${t.ago}</span></div>`
+      }
+
+      // Wo war ich
+      document.getElementById('pinned-list').innerHTML = Object.entries(topics).map(([id, t]) => `
+        <li class="topic" data-go="${id}">
+          <span class="topic__spine lc-bg-${t.color}"></span>
+          <div class="topic__body">
+            <div class="topic__head">
+              <span class="pin-badge lc-type-code lc-bg-${t.color}">${t.pin}</span>
+              <span class="lc-type-label lc-text-lavender">${t.project.toUpperCase()}</span>
+              <span class="topic__name lc-type-button lc-text-orange">${esc(t.topic).toUpperCase()}</span>
+              <span class="lc-type-status lc-text-cream">${t.ago}</span>
+            </div>
+            ${fields(t, ['status', 'next'])}
+          </div>
+        </li>`).join('')
+      document.getElementById('other-list').innerHTML = others.map((t) => `
+        <li class="topic">
+          <span class="topic__spine"></span>
+          <div class="topic__body">
+            <div class="topic__head">
+              <span class="lc-type-label lc-text-lavender">${t.project.toUpperCase()}</span>
+              <span class="topic__name lc-type-button lc-text-orange">${esc(t.topic).toUpperCase()}</span>
+              <span class="lc-type-status lc-text-cream">${t.ago}</span>
+            </div>
+            ${fields(t, ['status', 'next'])}
+          </div>
+        </li>`).join('')
+
+      // Themenseiten
+      for (const [id, t] of Object.entries(topics)) {
+        document.querySelector(`[data-view="${id}"]`).innerHTML = `
+          <header class="page-head">
+            <div class="page-head__text">
+              <span class="lc-type-label lc-text-lavender">${t.project.toUpperCase()} · ANGEHEFTET ${t.pin} · <kbd>CMD/STRG + ${t.pin}</kbd></span>
+              <h2 class="lc-type-readout lc-text-orange">${esc(t.topic).toUpperCase()}</h2>
+            </div>
+            <span class="lc-type-readout lc-text-orange lc-tabular">${String(t.history.length + 1).padStart(3, '0')}</span>
+          </header>
+          <div class="lc-row">
+            <button type="button" class="lc-btn lc-btn--cap-left lc-bg-peach" data-go="neu" data-topic="${id}">+ STAND</button>
+            <button type="button" class="lc-btn lc-bg-lavender">LÖSEN</button>
+            <button type="button" class="lc-btn lc-btn--cap-right lc-bg-orange">ABSCHLIESSEN</button>
+          </div>
+          <div class="current">
+            <span class="current__spine lc-bg-${t.color}"></span>
+            <div class="current__body">
+              <div>
+                <div class="topic__head"><span class="lc-type-button lc-text-orange lc-tabular">${t.ts}</span><span class="lc-type-label lc-text-cream">${t.ago}</span><span class="lc-type-status lc-text-lavender">QUELLE <span class="lc-text-cream">${t.source}</span></span></div>
+                <span class="lc-type-code lc-text-cream lc-tabular">${t.star}</span>
+              </div>
+              ${fields(t, ['status', 'next', 'open', 'refs'])}
+            </div>
+          </div>
+          <span class="lc-type-label lc-text-lavender">VERLAUF</span>
+          <ol class="history">${t.history.map(([ts, s]) => `<li><span class="lc-type-status lc-text-orange lc-tabular">${ts}</span><span class="lc-type-status lc-text-cream lc-verbatim">${esc(s)}</span></li>`).join('')}</ol>`
+      }
+
+      // Formular: vorbelegt aus dem Thema
+      const f = { status: document.getElementById('f-status'), next: document.getElementById('f-next'), open: document.getElementById('f-open'), refs: document.getElementById('f-refs') }
+      function fillForm(id) {
+        const t = topics[id]
+        document.getElementById('form-kicker').textContent = t ? `${t.project.toUpperCase()} · FORTSCHREIBEN` : 'LOGBUCH'
+        document.getElementById('form-title').textContent = t ? t.topic.toUpperCase() : 'NEUER EINTRAG'
+        document.getElementById('form-hint').style.display = t ? '' : 'none'
+        for (const k of Object.keys(f)) f[k].value = t ? t[k] : (k === 'refs' ? '' : '- ')
+      }
+      // Enter in einer "- "-Zeile setzt den nächsten Strich; Enter auf leerem Strich beendet die Liste.
+      for (const ta of Object.values(f)) {
+        ta.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter' || e.shiftKey || e.metaKey || e.ctrlKey || e.isComposing) return
+          const { value, selectionStart: pos } = ta
+          const lineStart = value.lastIndexOf('\n', pos - 1) + 1
+          const line = value.slice(lineStart, pos)
+          const m = /^(\s*)- (.*)$/.exec(line)
+          if (!m) return
+          e.preventDefault()
+          if (!m[2].trim()) {
+            ta.setRangeText('', lineStart, pos, 'end')
+            return
+          }
+          ta.setRangeText(`\n${m[1]}- `, pos, ta.selectionEnd, 'end')
+        })
+      }
+
+      // Navigation
+      let lastTopic = 't1'
+      function go(view, topicId) {
+        if (view === 'neu-leer') { fillForm(null); view = 'neu' }
+        else if (view === 'neu') fillForm(topicId || lastTopic)
+        if (topics[view]) lastTopic = view
+        document.querySelectorAll('[data-view]').forEach((el) => el.classList.toggle('is-active', el.dataset.view === view))
+        document.querySelectorAll('#rail .lc-nav').forEach((b) => {
+          b.removeAttribute('aria-current')
+          if (b.dataset.go === view) b.setAttribute('aria-current', 'page')
+        })
+        if (view === 'neu') setTimeout(() => f.status.focus(), 0)
+      }
+      document.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-go]')
+        if (el) go(el.dataset.go, el.dataset.topic)
+      })
+      document.addEventListener('keydown', (e) => {
+        if (!(e.metaKey || e.ctrlKey)) return
+        if (/^[1-3]$/.test(e.key)) { e.preventDefault(); go('t' + e.key) }
+        if (e.key === 'Enter' && document.querySelector('[data-view="neu"].is-active')) { e.preventDefault(); save() }
+      })
+      const toast = document.getElementById('toast')
+      function save() { toast.classList.add('is-on'); setTimeout(() => toast.classList.remove('is-on'), 1400); go(lastTopic) }
+      document.getElementById('save').onclick = save
+      document.getElementById('cancel').onclick = () => go(lastTopic)
+
+      // Uhr
+      const pad = (n) => String(n).padStart(2, '0')
+      const days = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA']
+      function tick() {
+        const d = new Date()
+        document.getElementById('clock').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+        document.getElementById('date').textContent = `${days[d.getDay()]} ${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`
+      }
+      tick(); setInterval(tick, 1000)
+
+      go(location.hash.slice(1) || 'wo')
+    </script>
+  </body>
+</html>

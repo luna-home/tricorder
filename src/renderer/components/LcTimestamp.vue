@@ -4,12 +4,14 @@ import { computed } from 'vue'
 import { useTimeFormat } from '../time/format'
 import { useNow } from '../time/useNow'
 
-// Real time first (orange), how long ago (cream), the stardate small below (cream).
+// Real time first (orange), how long ago (cream), the stardate small below (cream); `inline`
+// puts all three on one baseline, for a protocol line.
 const props = defineProps<{
   /** ISO 8601 time, e.g. an entry's `ts`, or a Date. */
   value: string | Date
   /** Reference time for the relative part; defaults to a clock ticking every 30 s. */
   now?: Date
+  inline?: boolean
 }>()
 
 const format = useTimeFormat()
@@ -24,7 +26,7 @@ const stardate = computed(() => format.stardate(props.value))
 </script>
 
 <template>
-  <div class="lc-timestamp">
+  <div class="lc-timestamp" :class="{ 'lc-timestamp--inline': inline }">
     <div class="lc-timestamp__line">
       <time :datetime="iso" class="lc-timestamp__real lc-type-button lc-tabular">
         {{ realTime }}
@@ -40,6 +42,11 @@ const stardate = computed(() => format.stardate(props.value))
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+}
+.lc-timestamp--inline {
+  flex-flow: row wrap;
+  align-items: baseline;
+  column-gap: var(--space-3);
 }
 .lc-timestamp__line {
   display: flex;

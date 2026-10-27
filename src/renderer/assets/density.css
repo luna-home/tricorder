@@ -1,0 +1,364 @@
+/*
+ * Luna Console density (prototype, docs/plan-dichte-desk.md). Goes upstream into
+ * luna-design-system; until then it lives here so the copy in design/luna-console stays untouched.
+ *
+ * Two densities, one shape language:
+ *   touch  the original finger-sized values (touch panels, pointer: coarse)
+ *   desk   ~0.7 for mouse and trackpad, picked by @media (pointer: fine)
+ * data-lc-density="touch" | "desk" on <html> or any container forces one.
+ *
+ * Section 1 defines the size variables per density, section 2 makes the components read them
+ * (components.css still has literals). --density-scale only shrinks small label offsets and
+ * paddings that have no token of their own.
+ */
+
+/* 1. Size variables. The touch block repeats tokens.css so a touch container inside a desk
+   root gets the original values back. */
+:root,
+[data-lc-density='touch'] {
+  --density-scale: 1;
+
+  --type-clock: 68px;
+  --type-title: 58px;
+  --type-readout: 46px;
+  --type-tile: 30px;
+  --type-button: 24px;
+  --type-nav: 22px;
+  --type-label: 22px;
+  --type-status: 20px;
+  --type-elbow: 18px;
+  --type-code: 16px;
+
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4-5: 18px;
+  --space-5: 20px;
+  --space-8: 32px;
+
+  --radius-dot: 6px;
+  --radius-elbow-inner: 26px;
+  --radius-option: 29px;
+  --radius-pill: 32px;
+  --radius-tile: 36px;
+  --radius-elbow: 56px;
+
+  --rail-width: 150px;
+  --elbow-width: 210px;
+  --rail-width-compact: 100px;
+  --elbow-width-compact: 140px;
+  --elbow-upper-height: 104px;
+  --elbow-lower-height: 70px;
+  --bar-height: 14px;
+  --nav-height: 50px;
+  --option-height: 58px;
+  --control-height: 64px;
+  --segmentbar-height: 90px;
+  --tile-height: 103px;
+}
+
+@media (pointer: fine) {
+  :root:not([data-lc-density='touch']) {
+    --density-scale: 0.7;
+
+    --type-clock: 34px;
+    --type-title: 30px;
+    --type-readout: 30px;
+    --type-tile: 20px;
+    --type-button: 17px;
+    --type-nav: 16px;
+    --type-label: 16px;
+    --type-status: 14px;
+    --type-elbow: 13px;
+    --type-code: 12px;
+
+    --space-2-5: 8px;
+    --space-3: 8px;
+    --space-4-5: 12px;
+    --space-5: 14px;
+    --space-8: 24px;
+
+    --radius-dot: 4px;
+    --radius-elbow-inner: 18px;
+    --radius-option: 18px;
+    --radius-pill: 20px;
+    --radius-tile: 24px;
+    --radius-elbow: 40px;
+
+    --rail-width: 80px;
+    --elbow-width: 116px;
+    --rail-width-compact: 64px;
+    --elbow-width-compact: 88px;
+    --elbow-upper-height: 60px;
+    --elbow-lower-height: 40px;
+    --bar-height: 8px;
+    --nav-height: 34px;
+    --option-height: 36px;
+    --control-height: 40px;
+    --segmentbar-height: 56px;
+    --tile-height: 72px;
+  }
+}
+
+[data-lc-density='desk'] {
+  --density-scale: 0.7;
+
+  --type-clock: 34px;
+  --type-title: 30px;
+  --type-readout: 30px;
+  --type-tile: 20px;
+  --type-button: 17px;
+  --type-nav: 16px;
+  --type-label: 16px;
+  --type-status: 14px;
+  --type-elbow: 13px;
+  --type-code: 12px;
+
+  --space-2-5: 8px;
+  --space-3: 8px;
+  --space-4-5: 12px;
+  --space-5: 14px;
+  --space-8: 24px;
+
+  --radius-dot: 4px;
+  --radius-elbow-inner: 18px;
+  --radius-option: 18px;
+  --radius-pill: 20px;
+  --radius-tile: 24px;
+  --radius-elbow: 40px;
+
+  --rail-width: 80px;
+  --elbow-width: 116px;
+  --rail-width-compact: 64px;
+  --elbow-width-compact: 88px;
+  --elbow-upper-height: 60px;
+  --elbow-lower-height: 40px;
+  --bar-height: 8px;
+  --nav-height: 34px;
+  --option-height: 36px;
+  --control-height: 40px;
+  --segmentbar-height: 56px;
+  --tile-height: 72px;
+}
+
+/* log: a third, denser step for reading text like a protocol. Set on a content container
+   (data-lc-density="log"), never on the frame: it changes only content sizes, the rail and the
+   frame keep their density. Meant for mouse and trackpad; targets are 26-28px. */
+[data-lc-density='log'] {
+  --density-scale: 0.5;
+
+  --type-readout: 20px;
+  --type-tile: 15px;
+  --type-button: 14px;
+  --type-nav: 13px;
+  --type-label: 14px;
+  --type-status: 13px;
+  --type-code: 11px;
+
+  --space-2-5: 6px;
+  --space-3: 6px;
+  --space-4-5: 10px;
+  --space-5: 10px;
+  --space-8: 16px;
+
+  --radius-option: 14px;
+  --radius-pill: 13px;
+  --radius-tile: 16px;
+
+  --option-height: 28px;
+  --control-height: 26px;
+  --tile-height: 52px;
+}
+
+/* 2. Components read the variables. Same selectors as components.css, loaded after it. */
+
+.lc-elbow {
+  height: var(--elbow-upper-height);
+}
+.lc-elbow__label {
+  left: calc(10px * var(--density-scale));
+  width: calc(var(--rail-width) - 22px * var(--density-scale));
+  font-size: var(--type-elbow);
+}
+.lc-elbow--down .lc-elbow__label {
+  bottom: calc(28px * var(--density-scale));
+}
+.lc-elbow--up .lc-elbow__label {
+  bottom: calc(8px * var(--density-scale));
+}
+
+.lc-nav {
+  padding: 0 var(--space-3) calc(5px * var(--density-scale));
+  font-size: var(--type-nav);
+}
+
+.lc-btn {
+  padding: 0 var(--space-4-5) calc(8px * var(--density-scale));
+  font-size: var(--type-button);
+}
+
+.lc-options {
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(
+      max(min(100%, calc(160px * var(--density-scale))), calc((100% - var(--space-2)) / 2)),
+      1fr
+    )
+  );
+}
+.lc-option {
+  padding: 0 calc(22px * var(--density-scale)) calc(6px * var(--density-scale));
+  font-size: var(--type-nav);
+}
+
+.lc-tiles {
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(
+      max(min(100%, calc(150px * var(--density-scale))), calc((100% - 2 * var(--space-2)) / 3)),
+      1fr
+    )
+  );
+}
+.lc-tile {
+  padding: 0 var(--space-5) calc(8px * var(--density-scale));
+  font-size: var(--type-tile);
+}
+.lc-tile__code {
+  top: calc(10px * var(--density-scale));
+  font-size: var(--type-code);
+}
+
+.lc-readout {
+  height: calc(44px * var(--density-scale));
+}
+.lc-readout__label {
+  font-size: var(--type-label);
+}
+.lc-readout__value {
+  font-size: var(--type-readout);
+}
+.lc-readout__value--text {
+  font-size: var(--type-label);
+}
+
+.lc-status {
+  font-size: var(--type-status);
+}
+.lc-status::before {
+  width: calc(2 * var(--radius-dot));
+  height: calc(2 * var(--radius-dot));
+}
+.lc-statusline {
+  font-size: var(--type-status);
+}
+
+.lc-notice__title {
+  font-size: var(--type-readout);
+}
+.lc-notice__detail {
+  font-size: var(--type-label);
+}
+
+.lc-panel {
+  grid-template-rows: auto auto var(--space-1-5) var(--elbow-lower-height) var(--space-1) minmax(
+      0,
+      1fr
+    );
+}
+.lc-panel__upper {
+  min-height: var(--elbow-upper-height);
+}
+/* LcPanel sets the lower elbow to 70px inline; upstream it comes from --elbow-lower-height. */
+.lc-panel__lower {
+  height: var(--elbow-lower-height) !important;
+}
+.lc-panel__header {
+  gap: calc(22px * var(--density-scale));
+  min-height: calc(78px * var(--density-scale));
+  padding: calc(6px * var(--density-scale)) 0 calc(20px * var(--density-scale))
+    calc(26px * var(--density-scale));
+}
+.lc-panel__clock {
+  font-size: var(--type-clock);
+}
+.lc-panel__meta {
+  font-size: var(--type-status);
+}
+.lc-panel__title {
+  padding: calc(4px * var(--density-scale)) var(--space-3) 0 0;
+  font-size: var(--type-title);
+}
+.lc-panel__content {
+  padding: calc(26px * var(--density-scale)) calc(16px * var(--density-scale))
+    calc(10px * var(--density-scale)) calc(30px * var(--density-scale));
+}
+
+/* Compact frame: same switch as components.css (container, or viewport without one). */
+@container (max-width: 639px) {
+  .lc-panel__header {
+    gap: var(--space-3);
+    min-height: 0;
+    padding: calc(6px * var(--density-scale)) 0 calc(4px * var(--density-scale))
+      calc(20px * var(--density-scale));
+  }
+  .lc-panel__clock {
+    font-size: var(--type-readout);
+  }
+  .lc-panel__meta {
+    font-size: var(--type-elbow);
+  }
+  .lc-panel__title {
+    padding: 0 var(--space-3) calc(20px * var(--density-scale)) 0;
+    font-size: var(--type-readout);
+  }
+  .lc-panel__content {
+    padding: calc(26px * var(--density-scale)) var(--space-3) calc(10px * var(--density-scale))
+      calc(16px * var(--density-scale));
+  }
+  .lc-panel .lc-nav {
+    font-size: var(--type-status);
+  }
+  .lc-panel .lc-btn {
+    padding: 0 var(--space-3) calc(8px * var(--density-scale));
+    font-size: var(--type-nav);
+  }
+}
+@media (max-width: 639px) {
+  .lc-panel__header {
+    gap: var(--space-3);
+    min-height: 0;
+    padding: calc(6px * var(--density-scale)) 0 calc(4px * var(--density-scale))
+      calc(20px * var(--density-scale));
+  }
+  .lc-panel__clock {
+    font-size: var(--type-readout);
+  }
+  .lc-panel__meta {
+    font-size: var(--type-elbow);
+  }
+  .lc-panel__title {
+    padding: 0 var(--space-3) calc(20px * var(--density-scale)) 0;
+    font-size: var(--type-readout);
+  }
+  .lc-panel__content {
+    padding: calc(26px * var(--density-scale)) var(--space-3) calc(10px * var(--density-scale))
+      calc(16px * var(--density-scale));
+  }
+  .lc-panel .lc-nav {
+    font-size: var(--type-status);
+  }
+  .lc-panel .lc-btn {
+    padding: 0 var(--space-3) calc(8px * var(--density-scale));
+    font-size: var(--type-nav);
+  }
+}
+
+.lc-cols {
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(
+      max(min(100%, calc(280px * var(--density-scale))), calc((100% - var(--space-8)) / 2)),
+      1fr
+    )
+  );
+}

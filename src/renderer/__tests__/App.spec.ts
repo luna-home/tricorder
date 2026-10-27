@@ -35,19 +35,20 @@ describe('App frame', () => {
     expect(readout.text()).toBe('Nicht eingerichtet')
   })
 
-  it('opens a service from its tile and shows its sub-pages in the rail', async () => {
+  it('opens a service from its tile; the rail lists only START and the services', async () => {
     installBridge({ handlers: { 'logbuch.projects': () => [], 'logbuch.openTopics': () => [] } })
     const { wrapper, router } = await mountApp('/')
+    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch'])
     await wrapper.find('.lc-tile').trigger('click')
     await settle()
     expect(router.currentRoute.value.name).toBe('logbuch')
-    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch', 'Neu'])
+    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch'])
     expect(wrapper.find('.lc-nav[aria-current="page"]').text()).toBe('Logbuch')
 
-    await button(wrapper, 'Neu').trigger('click')
+    await router.push('/logbuch/neu')
     await settle()
-    expect(router.currentRoute.value.name).toBe('logbuch.new')
-    expect(wrapper.find('.lc-nav[aria-current="page"]').text()).toBe('Neu')
+    expect(railLabels(wrapper)).toEqual(['Start', 'Logbuch'])
+    expect(wrapper.find('.lc-nav[aria-current="page"]').text()).toBe('Logbuch')
   })
 
   it('goes to red alert without a bridge and names cause and fix', async () => {

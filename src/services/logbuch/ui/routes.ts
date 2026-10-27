@@ -13,7 +13,6 @@ const routes: RouteRecordRaw[] = [
     path: 'neu',
     name: 'logbuch.new',
     component: () => import('./views/EntryFormView.vue'),
-    meta: { navKey: 'services.logbuch.nav.new', navColor: 'peach' },
   },
   {
     path: ':project/:topic',
